@@ -10,6 +10,16 @@
 //     Each one sold brings in `each`. `fee` is the cost of setting up. The
 //     town wants `target` left over:  each × n − fee = target.
 //
+//   { skill, kind: 'match', fee1, each1, fee2, each2 }
+//     Two offers. The first has the smaller charge and the bigger price
+//     each. Find where they cost the same:
+//     fee1 + each1 × n = fee2 + each2 × n.
+//
+//   { skill, kind: 'mix', tickets, price1, price2, money }
+//     `tickets` were sold at two prices, bringing in `money`. Find how many
+//     were sold at the higher price, price1:
+//     price1 × n + price2 × (tickets − n) = money.
+//
 // All amounts are whole dollars. The answer is the number n.
 
 export const SKILLS = [
@@ -32,6 +42,16 @@ export const SKILLS = [
     id: 'earn-a-target',
     name: 'Earning a target',
     about: 'Sales must cover a cost and leave a set amount, such as $2 a ticket after $30 costs, to leave $50.',
+  },
+  {
+    id: 'same-cost',
+    name: 'Where two offers cost the same',
+    about: 'Two offers, each a charge plus a price each, such as $20 plus $3 an hour against $50 plus $1 an hour.',
+  },
+  {
+    id: 'two-kinds',
+    name: 'Two kinds of ticket',
+    about: 'A number of tickets at two prices and the money they made, such as 24 tickets at $5 and $3 making $88.',
   },
 ];
 
@@ -70,6 +90,21 @@ const GENERATORS = {
       if (target >= 10) return { kind: 'earn', each, fee, target };
     }
   },
+
+  'same-cost': (rng) => {
+    const each2 = rng.int(1, 5);
+    const closes = rng.int(1, 5);
+    const fee1 = rng.int(5, 30);
+    return { kind: 'match', fee1, each1: each2 + closes, fee2: fee1 + closes * rng.int(3, 15), each2 };
+  },
+
+  'two-kinds': (rng) => {
+    const price2 = rng.int(2, 5);
+    const price1 = price2 + rng.int(1, 4);
+    const tickets = rng.int(10, 40);
+    const dearer = rng.int(2, tickets - 2);
+    return { kind: 'mix', tickets, price1, price2, money: price1 * dearer + price2 * (tickets - dearer) };
+  },
 };
 
 export function generate(skillId, rng) {
@@ -80,9 +115,16 @@ export function generate(skillId, rng) {
 
 export function expected(problem) {
   const { kind, each, fee } = problem;
+  if (kind === 'match') return (problem.fee2 - problem.fee1) / (problem.each1 - problem.each2);
+  if (kind === 'mix') {
+    return (problem.money - problem.price2 * problem.tickets) / (problem.price1 - problem.price2);
+  }
   return kind === 'buy' ? Math.floor((problem.budget - fee) / each) : (problem.target + fee) / each;
 }
 
-export function problemKey({ skill, kind, each, fee, budget, target }) {
-  return [skill, kind, each, fee, budget ?? target].join(':');
+export function problemKey(problem) {
+  const { skill, kind } = problem;
+  if (kind === 'match') return [skill, problem.fee1, problem.each1, problem.fee2, problem.each2].join(':');
+  if (kind === 'mix') return [skill, problem.tickets, problem.price1, problem.price2, problem.money].join(':');
+  return [skill, kind, problem.each, problem.fee, problem.budget ?? problem.target].join(':');
 }

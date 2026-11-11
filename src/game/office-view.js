@@ -65,9 +65,43 @@ const EARN = [
   },
 ];
 
+// Two offers to hire the same thing, each a charge plus a price each hour.
+const MATCH = [
+  { title: 'Hiring a digger', unit: ['hour', 'hours'], first: 'Hillside Hire', second: 'Valley Hire' },
+  { title: 'Hiring a stage', unit: ['hour', 'hours'], first: 'Hillside Hire', second: 'Valley Hire' },
+  { title: 'Hiring a generator', unit: ['hour', 'hours'], first: 'Hillside Hire', second: 'Valley Hire' },
+];
+
+// Tickets sold at two prices.
+const MIX = [
+  { title: 'The school play', unit: ['adult ticket', 'adult tickets'], event: 'the play' },
+  { title: 'The town pool', unit: ['adult ticket', 'adult tickets'], event: 'the pool' },
+  { title: 'The museum', unit: ['adult ticket', 'adult tickets'], event: 'the museum' },
+];
+
 const some = (n, unit) => `${n} ${n === 1 ? unit[0] : unit[1]}`;
 
+/** The cost of each of two offers after `hours`. */
+const costs = (p, hours) => [p.fee1 + p.each1 * hours, p.fee2 + p.each2 * hours];
+/** The money from `dearer` tickets at the higher price and the rest at the lower. */
+const takings = (p, dearer) => p.price1 * dearer + p.price2 * (p.tickets - dearer);
+
 function docketLines(p, plan) {
+  if (p.kind === 'match') {
+    return [
+      `${plan.first} charges $${p.fee1} to deliver, plus $${p.each1} for each hour.`,
+      `${plan.second} charges $${p.fee2} to deliver, plus $${p.each2} for each hour.`,
+      'Find the number of hours at which they cost the same.',
+    ];
+  }
+  if (p.kind === 'mix') {
+    return [
+      `${p.tickets} tickets were sold for ${plan.event}.`,
+      `Adult tickets cost $${p.price1}. Child tickets cost $${p.price2}.`,
+      `The cash box has $${p.money}.`,
+      'Work out how many adult tickets were sold.',
+    ];
+  }
   if (p.kind === 'earn') {
     return [
       plan.line(p.fee, p.each),
@@ -84,6 +118,27 @@ function docketLines(p, plan) {
 
 /** What the number would mean for the town's money. Every line is simply true. */
 function consequence(p, plan, answer) {
+  if (p.kind === 'match') {
+    const [first, second] = costs(p, answer);
+    return [
+      `At ${some(answer, plan.unit)}, ${plan.first} costs $${first}.`,
+      `${plan.second} costs $${second}.`,
+      first < second
+        ? `${plan.first} is still $${second - first} cheaper.`
+        : `${plan.second} is already $${first - second} cheaper.`,
+    ];
+  }
+  if (p.kind === 'mix') {
+    if (answer > p.tickets) {
+      return [`You wrote ${answer} adult tickets.`, `Only ${p.tickets} tickets were sold in all.`, null];
+    }
+    const made = takings(p, answer);
+    return [
+      `With ${some(answer, plan.unit)}, there are ${p.tickets - answer} child tickets.`,
+      `That makes $${p.price1 * answer} + $${p.price2 * (p.tickets - answer)} = $${made}.`,
+      `The cash box has $${p.money}. That is $${Math.abs(made - p.money)} ${made > p.money ? 'too much' : 'too little'}.`,
+    ];
+  }
   const each = p.each * answer;
   if (p.kind === 'earn') {
     const left = each - p.fee;
@@ -158,12 +213,77 @@ function strips(p, plan, tries) {
 }
 
 function answerLine(p, plan, right) {
+  if (p.kind === 'match') {
+    return `They start $${p.fee2 - p.fee1} apart, and the gap closes by $${p.each1 - p.each2} each hour. That takes ${some(right, plan.unit)}.`;
+  }
+  if (p.kind === 'mix') {
+    const allChild = p.price2 * p.tickets;
+    return `All child tickets would make $${allChild}. The cash box has $${p.money - allChild} more, at $${p.price1 - p.price2} extra for each adult ticket. That is ${some(right, plan.unit)}.`;
+  }
   if (p.kind === 'earn') return `The sales must bring in $${p.target + p.fee}. That takes ${some(right, plan.unit)}.`;
   const rest = p.budget - p.fee;
   const over = rest - right * p.each;
   const start = p.fee > 0 ? `$${rest} is left after the charge. That` : `$${rest}`;
   return `${start} pays for ${some(right, plan.unit)}${over > 0 ? `, with $${over} left over` : ''}.`;
 }
+
+/** A table of the first few cases, to reason from. It grows on a second miss. */
+function tableFor(p, plan, tries) {
+  const columns = tries >= 2 ? [0, 1, 2] : [0, 1];
+  if (p.kind === 'match') {
+    const rows = [
+      ['Hours', ...columns],
+      [plan.first, ...columns.map((n) => `$${costs(p, n)[0]}`)],
+      [plan.second, ...columns.map((n) => `$${costs(p, n)[1]}`)],
+    ];
+    if (tries >= 2) rows.push(['Apart', ...columns.map((n) => `$${costs(p, n)[1] - costs(p, n)[0]}`)]);
+    return { caption: 'What each one costs:', rows, note: null };
+  }
+  return {
+    caption: 'If only a few were adult tickets:',
+    rows: [
+      ['Adult tickets', ...columns],
+      ['Child tickets', ...columns.map((n) => p.tickets - n)],
+      ['Money', ...columns.map((n) => `$${takings(p, n)}`)],
+    ],
+    note: tries >= 2 ? `Each adult ticket in place of a child ticket adds $${p.price1 - p.price2}.` : null,
+  };
+}
+
+/** The helping picture for a plan: a strip diagram, or a table of cases. */
+function picture(p, plan, tries) {
+  if (p.kind === 'match' || p.kind === 'mix') {
+    const { caption, rows, note } = tableFor(p, plan, tries);
+    return h(
+      'figure',
+      {},
+      h('figcaption', {}, caption),
+      h(
+        'table',
+        { class: 'trip-table' },
+        rows.map(([heading, ...cells]) =>
+          h('tr', {}, h('th', { scope: 'row' }, heading), cells.map((cell) => h('td', {}, String(cell)))),
+        ),
+      ),
+      note && h('p', { class: 'mark-note' }, note),
+    );
+  }
+  return h(
+    'figure',
+    {},
+    h('figcaption', {}, 'How the money is split:'),
+    h('div', { html: stripsSvg(strips(p, plan, tries)) }),
+  );
+}
+
+/** The words before the blank on the order form. */
+function formBefore(p) {
+  if (p.kind === 'match') return 'They cost the same at';
+  if (p.kind === 'mix') return 'There were';
+  return p.kind === 'earn' ? 'Target:' : 'Order';
+}
+
+const PLANS = { earn: EARN, match: MATCH, mix: MIX };
 
 export const officeView = {
   job: officeJob,
@@ -174,8 +294,8 @@ export const officeView = {
     { at: 0, title: 'Intern' },
     { at: 1, title: 'Clerk' },
     { at: 2, title: 'Planner' },
-    { at: 3, title: 'Budget Analyst' },
-    { at: 4, title: 'Town Treasurer' },
+    { at: 4, title: 'Budget Analyst' },
+    { at: 6, title: 'Town Treasurer' },
   ],
   title: 'The town office',
   subject: 'Algebra',
@@ -190,7 +310,7 @@ export const officeView = {
   allLearnedLine: 'The town’s books have never been in better hands.',
 
   setUp(problem, rng) {
-    const plans = problem.kind === 'earn' ? EARN : problem.fee > 0 ? CHARGE : EACH;
+    const plans = PLANS[problem.kind] ?? (problem.fee > 0 ? CHARGE : EACH);
     return { plan: rng.pick(plans) };
   },
 
@@ -212,19 +332,14 @@ export const officeView = {
   control(round, api) {
     return numberPad(round, api, {
       max: ORDER_MAX,
-      before: round.problem.kind === 'earn' ? 'Target:' : 'Order',
+      before: formBefore(round.problem),
       unit: round.extra.plan.unit,
     });
   },
 
   /** The picture a teacher can ask to be shown before the first try. */
   preview(round) {
-    return h(
-      'figure',
-      {},
-      h('figcaption', {}, 'How the money is split:'),
-      h('div', { html: stripsSvg(strips(round.problem, round.extra.plan, 1)) }),
-    );
+    return picture(round.problem, round.extra.plan, 1);
   },
 
   check(round) {
@@ -237,14 +352,9 @@ export const officeView = {
     return [
       h('p', {}, first),
       h('p', { class: 'equation' }, second),
-      h('p', {}, third),
+      third && h('p', {}, third),
       note && h('p', { class: 'note' }, note),
-      h(
-        'figure',
-        {},
-        h('figcaption', {}, 'How the money is split:'),
-        h('div', { html: stripsSvg(strips(problem, plan, tries)) }),
-      ),
+      picture(problem, plan, tries),
       tries >= 3 && h('p', { class: 'answer' }, answerLine(problem, plan, result.expected)),
     ];
   },

@@ -171,6 +171,12 @@ is 10, from 6 + 2n = 26):
 | Takes the cost off the target | when raising money: subtracts the cost instead of adding it |
 | Leaves out the cost | when raising money: target ÷ price |
 | Stops at the money needed | when raising money: target + cost |
+| Adds the two prices each | two offers $30 apart at $3 and $1 an hour: 30 ÷ 4 |
+| Uses only one of the prices each | the same two offers: 30 ÷ 3 |
+| Stops at the gap between the charges | the same two offers: 30 |
+| Adds the two charges | ($20 + $50) ÷ 2 |
+| Treats every ticket as the higher price | $60 from $6 and $2 tickets: 60 ÷ 6 |
+| Adds the two ticket prices | $88 from $5 and $3 tickets: 88 ÷ 8 |
 
 In the workshop (a 4 by 3 rectangle, unless noted):
 
@@ -246,8 +252,10 @@ Every subject on the first list now has a job. What is missing inside them:
 
 - **Kitchen:** adding two amounts in different sizes, which needs a way of
   answering other than scoops.
-- **Town office:** two offers that cost the same at some point, which puts
-  the unknown on both sides.
+- **Town office:** the rest of a first algebra course that a job can
+  carry: straight-line price lists, "at least" and "at most", and
+  quadratics through area. Symbol work such as factoring is left out on
+  purpose, because no job needs it.
 - **Workshop:** angles, and the space inside a box.
 - **The street:** each job screen drawn as the tool it uses, and repairs to
   buy for every building, not only the store.

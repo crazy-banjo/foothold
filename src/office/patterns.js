@@ -12,6 +12,11 @@
 const withCharge = (p) => p.kind === 'buy' && p.fee > 0;
 const earns = (p) => p.kind === 'earn';
 const exact = (p) => (p.budget - p.fee) % p.each === 0;
+const matches = (p) => p.kind === 'match';
+const mixes = (p) => p.kind === 'mix';
+/** How far apart two offers start, and how fast that gap closes. */
+const gap = (p) => p.fee2 - p.fee1;
+const closes = (p) => p.each1 - p.each2;
 
 export const PATTERNS = [
   {
@@ -84,5 +89,52 @@ export const PATTERNS = [
     predict: (p) => (earns(p) ? p.target + p.fee : null),
     hint: (p) =>
       `$${p.target + p.fee} is the money the sales must bring in. Each one brings in $${p.each}, so it takes fewer than ${p.target + p.fee}.`,
+  },
+  {
+    id: 'adds-the-prices',
+    name: 'Adds the two prices each',
+    about:
+      'Divides the gap between two offers by the sum of their prices each, instead of the difference. Example: $30 apart at $3 and $1 an hour: 30 ÷ 4.',
+    predict: (p) => (matches(p) ? gap(p) / (p.each1 + p.each2) : null),
+    hint: (p) =>
+      `Both offers go up every time. One goes up by $${p.each1} and the other by $${p.each2}, so the gap closes by only $${closes(p)} each time.`,
+  },
+  {
+    id: 'one-price-only',
+    name: 'Uses only one of the prices each',
+    about: 'Divides the gap between two offers by one price each. Example: $30 apart at $3 and $1 an hour: 30 ÷ 3.',
+    predict: (p) => (matches(p) ? gap(p) / p.each1 : null),
+    hint: (p) =>
+      `The other offer goes up too, by $${p.each2} each time. So the gap closes by only $${closes(p)} each time.`,
+  },
+  {
+    id: 'stops-at-gap',
+    name: 'Stops at the gap between the charges',
+    about: 'Gives the difference between the two charges as the answer. Example: $50 − $20 = 30.',
+    predict: (p) => (matches(p) ? gap(p) : null),
+    hint: (p) => `$${gap(p)} is how far apart the two offers start. That gap closes by $${closes(p)} each time.`,
+  },
+  {
+    id: 'adds-the-charges',
+    name: 'Adds the two charges',
+    about: 'Adds the charges instead of finding how far apart they are. Example: ($20 + $50) ÷ 2.',
+    predict: (p) => (matches(p) ? (p.fee1 + p.fee2) / closes(p) : null),
+    hint: (p) => `What matters is how far apart the two charges are: $${p.fee2} is $${gap(p)} more than $${p.fee1}.`,
+  },
+  {
+    id: 'all-one-price',
+    name: 'Treats every ticket as the higher price',
+    about: 'Divides the money by the higher price alone. Example: $60 from $6 and $2 tickets: 60 ÷ 6 = 10.',
+    predict: (p) => (mixes(p) ? p.money / p.price1 : null),
+    hint: (p) =>
+      `That would be right if only $${p.price1} tickets were sold. There were ${p.tickets} tickets in all, so the rest must fit too.`,
+  },
+  {
+    id: 'pairs-the-prices',
+    name: 'Adds the two ticket prices',
+    about: 'Divides the money by the two prices added together, as if the same number of each were sold. Example: $88 ÷ ($5 + $3) = 11.',
+    predict: (p) => (mixes(p) ? p.money / (p.price1 + p.price2) : null),
+    hint: (p) =>
+      `Adding the two prices works only if the same number of each was sold. Check it against the ${p.tickets} tickets in all.`,
   },
 ];

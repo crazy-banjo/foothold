@@ -33,9 +33,17 @@ test('every situation has a whole-number answer that can be ordered', () => {
       // n is the most the budget pays for.
       assert.ok(p.fee + p.each * n <= p.budget, JSON.stringify(p));
       assert.ok(p.fee + p.each * (n + 1) > p.budget, JSON.stringify(p));
-    } else {
+    } else if (p.kind === 'earn') {
       assert.equal(p.each * n - p.fee, p.target, JSON.stringify(p));
       assert.ok(p.target > 0);
+    } else if (p.kind === 'match') {
+      // At n the two offers cost exactly the same, and the first starts cheaper.
+      assert.equal(p.fee1 + p.each1 * n, p.fee2 + p.each2 * n, JSON.stringify(p));
+      assert.ok(p.fee1 < p.fee2 && p.each1 > p.each2, JSON.stringify(p));
+    } else {
+      // n tickets at the higher price and the rest at the lower make the money.
+      assert.equal(p.price1 * n + p.price2 * (p.tickets - n), p.money, JSON.stringify(p));
+      assert.ok(n >= 1 && n < p.tickets && p.price1 > p.price2, JSON.stringify(p));
     }
   }
 });
@@ -57,6 +65,12 @@ test('each skill generates the kind of situation it describes', () => {
     p = generate('earn-a-target', rng);
     assert.equal(p.kind, 'earn');
     assert.ok(p.fee > 0);
+
+    p = generate('same-cost', rng);
+    assert.equal(p.kind, 'match');
+
+    p = generate('two-kinds', rng);
+    assert.equal(p.kind, 'mix');
   }
 });
 
@@ -95,6 +109,26 @@ test('patterns predict the documented wrong answers', () => {
   assert.equal(predicted('takes-cost-off-target', e), 10);
   assert.equal(predicted('ignores-cost', e), 25);
   assert.equal(predicted('stops-at-sales-needed', e), 80);
+});
+
+test('patterns for two offers and two kinds of ticket', () => {
+  // $20 plus $3 an hour against $50 plus $1 an hour: the same at 15 hours.
+  const offers = { skill: 'same-cost', kind: 'match', fee1: 20, each1: 3, fee2: 50, each2: 1 };
+  assert.equal(job.expected(offers), 15);
+  assert.equal(predicted('one-price-only', offers), 10);
+  assert.equal(predicted('stops-at-gap', offers), 30);
+  assert.equal(predicted('adds-the-charges', offers), 35);
+  assert.equal(predicted('adds-the-prices', offers), null); // 30 ÷ 4 is not whole
+  assert.equal(predicted('adds-the-prices', { ...offers, fee2: 60 }), 10); // 40 ÷ 4
+
+  // 24 tickets at $5 and $3 made $88: 8 at $5.
+  const play = { skill: 'two-kinds', kind: 'mix', tickets: 24, price1: 5, price2: 3, money: 88 };
+  assert.equal(job.expected(play), 8);
+  assert.equal(predicted('pairs-the-prices', play), 11);
+  // 20 tickets at $6 and $2 made $60: 5 at $6.
+  const pool = { skill: 'two-kinds', kind: 'mix', tickets: 20, price1: 6, price2: 2, money: 60 };
+  assert.equal(job.expected(pool), 5);
+  assert.equal(predicted('all-one-price', pool), 10);
 });
 
 test('patterns stay silent where they do not apply', () => {
