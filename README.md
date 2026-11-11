@@ -3,25 +3,34 @@
 A free math game where the math is the job, and where a wrong answer is
 treated as information about *how* the player is thinking.
 
-Nell has run her corner shop for forty years, and it is looking worn. She
-hires you to work the counter. A customer buys something and pays. Nothing
-asks "what is $5.00 − $2.40?" You open the till and hand back the change.
-The coins you earn are your wages, and you spend them fixing up the shop.
+Foothold is a small town whose main street has seen better days. You take
+jobs there. Each job is real work that needs the math of its level, and no
+job ever poses a question like "what is $5.00 − $2.40?" or "what is
+3/4 − 1/2?". The coins you earn are wages, and you spend them fixing up the
+street.
+
+| Job | Math | What you do |
+|---|---|---|
+| Nell's shop counter | Money, subtraction | Hand customers their change from the till |
+| Nell's kitchen | Fractions | Measure ingredients with whichever scoops are clean |
 
 ![The shop counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
 
-When the change is wrong, Foothold does three things:
+![The kitchen after a wrong answer: the game compares what the recipe needs with what is in the bowl, using bars drawn to scale.](docs/kitchen.png)
 
-1. **Checks it the way a shopkeeper would.** It adds the change back to the
-   price and compares that with what the customer paid.
-2. **Looks for the reason.** It compares the amount handed over with what a
+When an answer is wrong, Foothold does three things:
+
+1. **Checks it in the terms of the job.** At the counter it adds the change
+   back to the price. In the kitchen it draws what is needed and what is in
+   the bowl as bars, to scale.
+2. **Looks for the reason.** It compares what was handed over with what a
    set of known mistake patterns would produce. Handing back $3.60 for a
    $2.40 item paid with $5.00 is the result of breaking a dollar into dimes
    and then still counting it as a dollar, and the game says so.
-3. **Gives a way forward.** A number line shows how to count up from the
-   price to what was paid. It gives more away with each further try.
+3. **Gives a way forward.** A picture to reason with, which gives more away
+   with each further try.
 
-It then chooses the next customers so that a suspected mistake pattern is
+It then chooses the next situations so that a suspected mistake pattern is
 either confirmed or ruled out.
 
 There are no accounts, no tracking, no ads and no server. Progress is kept
@@ -29,10 +38,9 @@ in the browser it is played in.
 
 ## Status
 
-Early. One job exists: making change at the shop counter, in six steps from
-whole dollars up to customers who add coins to get rounder change back. It
-uses US currency. It has not yet been tried with children, so the difficulty
-curve and the wording of the hints are untested guesses.
+Early. Two jobs exist, with six skills each. Money is US currency and
+measures are US cups. It has not yet been tried with children, so the
+difficulty curve and the wording of the hints are untested guesses.
 
 ## Play it
 
@@ -54,10 +62,12 @@ Adding `?seed=7` to the address replays the same run of customers.
 ## How the diagnosis works
 
 Each mistake pattern is a small function that answers one question: *if
-someone thought this way, what would they hand back here?* Diagnosis asks
-which patterns predict the amount that was actually handed over.
+someone thought this way, what would they hand over here?* Diagnosis asks
+which patterns predict what was actually handed over.
 
-| Pattern | Example ($2.40 paid with $5.00, unless noted) |
+At the counter ($2.40 paid with $5.00, unless noted):
+
+| Pattern | Hands back |
 |---|---|
 | Breaks a dollar but still counts it | $3.60 |
 | Takes the smaller digit from the larger | $3.40 |
@@ -67,32 +77,62 @@ which patterns predict the amount that was actually handed over.
 | Leaves out the cents | $2.00 |
 | Leaves out the dollars | 60¢ |
 
-The first three follow the subtraction "bugs" catalogued by Brown and Burton
-(1978) and VanLehn (1990). The rest are specific to making change.
+In the kitchen:
+
+| Pattern | Example |
+|---|---|
+| Counts the bottom number | 4 quarter-cup scoops for 3/4 cup |
+| Uses a single scoop | 1 quarter-cup scoop for 3/4 cup |
+| Keeps the top number when the scoop changes | 1 eighth-cup scoop for 1/4 cup |
+| Adds the same number to top and bottom | 1/2 "becomes" 3/4 |
+| Ignores what is already in the bowl | adds 3/4 cup when 1/2 cup is there |
+| Subtracts tops and bottoms separately | 3/4 − 1/2 = 2/2 |
+| Subtracts the tops across different sizes | 3/4 − 1/2 = 2/4 |
+| Leaves the amount as it is | 3/8 cup for two batches of 3/8 cup |
+| Multiplies the bottom number | two batches of 1/2 cup = 1/4 cup |
+| Adds instead of multiplying | two batches of 3/8 cup = 5/8 cup |
+| Halves the bottom number | half of 1/4 cup = 1/2 cup |
+
+The counter's column patterns follow the subtraction "bugs" catalogued by
+Brown and Burton (1978) and VanLehn (1990). Most of the kitchen's patterns
+come from treating the top and bottom of a fraction as two separate whole
+numbers, often called whole-number bias.
 
 One wrong answer is weak evidence, and sometimes more than one pattern
 explains it. So the game keeps a running level of evidence for each pattern.
 A hint about a pattern is given only when one pattern explains the answer,
-or when the player has shown that pattern before. Getting a problem right
+or when the player has shown that pattern before. Getting a situation right
 where a pattern would have gone wrong counts against it.
 
-The check and the number line are true whatever the cause, so the player is
+The check and the picture are true whatever the cause, so the player is
 never told something false when the diagnosis is uncertain.
+
+A pattern can only be recognised if its wrong answer can actually be handed
+over. In the kitchen, an answer such as 2/5 cup cannot be measured with the
+scoops, so "adds tops and bottoms" does not appear there yet.
+
+## Adding a job
+
+A job is one object (see `src/engine/diagnose.js` for the full list of what
+it provides): its skills in teaching order, a generator of situations, the
+right answer for a situation, and its mistake patterns. Every answer is a
+whole number of some small unit, such as cents or twenty-fourths of a cup.
+The learner model, the diagnosis and the choice of the next situation are
+shared by all jobs. A job also needs a screen in `src/game/`.
 
 ## Layout
 
 ```
 index.html, styles.css   the page
 sw.js                    offline support
-src/engine/              the math: no browser code, fully tested
-  change.js              the six skills and the situations for each
-  patterns.js            the mistake patterns
-  diagnose.js            matching an answer to patterns
+src/engine/              shared by every job: no browser code
+  diagnose.js            matching an answer to mistake patterns
   learner.js             mastery, evidence, choosing the next situation
-  countup.js             the counting-up steps
-  money.js, rng.js       cents and a seeded random number generator
-src/game/                the shop counter screen
-test/                    engine tests
+  rng.js                 a seeded random number generator
+src/counter/             the shop counter: money, situations, patterns
+src/kitchen/             the kitchen: fractions, situations, patterns
+src/game/                the screens: Main Street, each job, the story
+test/                    tests for the engine and both jobs
 ```
 
 ## Tests
@@ -105,20 +145,18 @@ Needs Node.js 20 or later. Nothing to install.
 
 ## Where this is going
 
-The counter is the first of several jobs, each one a real task that needs
-the math of its level. In the story, each is a new part of Nell's business:
+More buildings on Main Street, each with its own way of playing:
 
-- **Kitchen** (fractions): scale recipes, split portions
-- **Deliveries** (pre-algebra): routes, speeds, times
-- **Running the business** (algebra): prices, break-even
+- **Delivery depot** (pre-algebra): routes, speeds, times
+- **Town office** (algebra): prices, break-even
 - **Workshop** (geometry): measure, cut, fit
 
 ## Contributing
 
 The most useful contributions are observations of real learners: an answer
 the game failed to explain, a hint that did not help, or a mistake pattern
-that is missing. Please open an issue with the price, what was paid, and
-what was handed back.
+that is missing. Please open an issue with the situation and what was
+handed over.
 
 ## License
 

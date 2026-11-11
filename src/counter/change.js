@@ -78,11 +78,3 @@ export function generate(skillId, rng) {
   if (!make) throw new Error(`Unknown skill: ${skillId}`);
   return { skill: skillId, ...make(rng) };
 }
-
-export function correctChange(problem) {
-  return problem.paid - problem.price;
-}
-
-export function problemKey(problem) {
-  return `${problem.price}/${problem.paid}`;
-}

@@ -1,8 +1,7 @@
-// The shop counter. A customer buys something and pays; the player hands
-// back change from the till. Nothing ever asks "what is 5.00 − 2.40?".
+// The game shell: the story, Main Street, a day of work at one job, the
+// end of the day, and the progress panel. Each job supplies its own screen
+// (see counter-view.js and kitchen-view.js); everything here is shared.
 
-import { SKILLS } from '../engine/change.js';
-import { countUp } from '../engine/countup.js';
 import { diagnose } from '../engine/diagnose.js';
 import {
   CONFIRMED,
@@ -13,19 +12,27 @@ import {
   nextProblem,
   recordResult,
 } from '../engine/learner.js';
-import { TILL, breakdown, formatMoney, total } from '../engine/money.js';
-import { PATTERNS, getPattern } from '../engine/patterns.js';
 import { createRng } from '../engine/rng.js';
-import { customerSvg, numberLineSvg, pieceSvg, shopSvg } from './art.js';
-import { UPGRADES, pickItem, pickLook } from './goods.js';
+import { shopSvg } from './art.js';
+import { counterView } from './counter-view.js';
+import { h, rich } from './dom.js';
+import { UPGRADES } from './goods.js';
+import { kitchenView } from './kitchen-view.js';
 import { clearLearner, freshSave, loadLearner, saveLearner } from './storage.js';
 
-const CUSTOMERS_PER_DAY = 6;
+const VIEWS = [counterView, kitchenView];
+const COMING_LATER = [
+  { title: 'Delivery depot', subject: 'Pre-algebra' },
+  { title: 'Town office', subject: 'Algebra' },
+  { title: 'Workshop', subject: 'Geometry' },
+];
+
+const TASKS_PER_DAY = 6;
 /** Coins earned by the number of wrong tries before the right one. */
 const PAY = [10, 6, 3, 1];
 const MAX_TRAY = 40;
 
-// "?seed=7" in the address replays the same run of customers.
+// "?seed=7" in the address replays the same run of situations.
 const seed = Number(new URLSearchParams(location.search).get('seed')) || Date.now();
 const rng = createRng(seed);
 
@@ -35,38 +42,103 @@ const purseEl = document.getElementById('purse');
 const progressDialog = document.getElementById('progress');
 
 let learner = loadLearner();
-let today = newDay();
+let view = null; // the job being worked today
+let today = null;
 let round = null;
-let view = {};
+let parts = {};
 let summary = null;
 
-function newDay() {
-  return { served: 0, firstTry: 0, earned: 0, learned: [] };
+function setHeader(where) {
+  whereEl.textContent = `Day ${learner.day} · ${where}`;
+  purseEl.textContent = `${learner.coins} coins`;
 }
 
-/** Tiny DOM builder: h('p', { class: 'x' }, 'text', child). */
-function h(tag, props = {}, ...children) {
-  const el = document.createElement(tag);
-  for (const [key, value] of Object.entries(props)) {
-    if (value === false || value == null) continue;
-    if (key === 'class') el.className = value;
-    else if (key === 'html') el.innerHTML = value;
-    else if (key.startsWith('on')) el.addEventListener(key.slice(2), value);
-    else el.setAttribute(key, value === true ? '' : value);
-  }
-  el.append(...children.flat().filter((c) => c != null && c !== false));
-  return el;
+const trayTotal = () => round.tray.reduce((sum, piece) => sum + piece.value, 0);
+
+// ----------------------------------------------------------------- story
+
+function showIntro() {
+  const start = h(
+    'button',
+    {
+      class: 'primary',
+      type: 'button',
+      onclick: () => {
+        learner.intro = true;
+        saveLearner(learner);
+        showStreet();
+      },
+    },
+    'Go to Main Street',
+  );
+  app.replaceChildren(
+    h(
+      'section',
+      { class: 'card story' },
+      h('h2', {}, 'Welcome to Foothold'),
+      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+      h('p', {}, 'Foothold is a small town at the foot of the hills. Its main street has seen better days.'),
+      h('p', {}, 'Nell has run the corner shop for forty years. She needs help at the counter and in the kitchen.'),
+      h('p', {}, 'Every job here is real work. Do it well and you earn coins.'),
+      h('p', {}, 'Spend your coins to fix up the street, starting with Nell’s shop.'),
+      start,
+    ),
+  );
+  setHeader('Foothold');
 }
 
-// ---------------------------------------------------------------- rounds
+// ----------------------------------------------------------- main street
+
+function showStreet() {
+  view = null;
+  round = null;
+  app.replaceChildren(
+    h(
+      'section',
+      { class: 'card street' },
+      h('h2', {}, 'Main Street'),
+      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+      h('p', {}, 'Where will you work today?'),
+    ),
+    ...VIEWS.map((v) => {
+      const learned = v.job.skills.filter((s) => isMastered(learner, v.job, s.id)).length;
+      return h(
+        'section',
+        { class: 'card job' },
+        h('div', {}, h('h3', {}, v.title), h('p', { class: 'about' }, `${v.subject}. ${v.blurb}`)),
+        h('p', { class: 'status' }, `${learned} of ${v.job.skills.length} skills learned`),
+        h(
+          'button',
+          { class: 'primary', type: 'button', 'aria-label': `Work at ${v.title} today`, onclick: () => startDay(v) },
+          'Work here',
+        ),
+      );
+    }),
+    h(
+      'section',
+      { class: 'card later' },
+      h('h3', {}, 'Not open yet'),
+      h('ul', {}, COMING_LATER.map((place) => h('li', {}, `${place.title} (${place.subject})`))),
+    ),
+  );
+  setHeader('Main Street');
+}
+
+// ---------------------------------------------------------------- a day
+
+function startDay(chosen) {
+  view = chosen;
+  today = { served: 0, firstTry: 0, earned: 0, learned: [] };
+  startRound();
+}
 
 function startRound() {
-  const problem = nextProblem(learner, rng);
+  const problem = nextProblem(learner, view.job, rng);
   round = {
     problem,
-    item: pickItem(problem.price, rng),
-    look: pickLook(rng),
+    extra: view.setUp(problem, rng),
     tray: [],
+    lastTray: [],
     wrong: [],
     result: null,
     hint: null,
@@ -74,67 +146,33 @@ function startRound() {
     pay: 0,
     learned: null,
   };
-  view = {
+  parts = {
     scene: h('section', { class: 'scene card' }),
     feedback: h('section', { class: 'feedback', role: 'status', 'aria-live': 'polite', tabindex: '-1' }),
-    tray: h('section', { class: 'tray card', 'aria-label': 'Change you are handing back' }),
-    till: h('section', { class: 'till', 'aria-label': 'Your till' }),
+    tray: h('section', { class: 'tray card', 'aria-label': view.labels.tray }),
+    till: h('section', { class: 'till', 'aria-label': view.labels.pieces }),
     actions: h('div', { class: 'actions' }),
   };
-  app.replaceChildren(view.scene, view.feedback, view.tray, view.till, view.actions);
+  app.replaceChildren(parts.scene, parts.feedback, parts.tray, parts.till, parts.actions);
   renderAll();
 }
 
 function renderAll() {
-  renderHeader();
-  renderScene();
+  const task = round.done ? today.served : today.served + 1;
+  setHeader(`${view.taskWord} ${task} of ${TASKS_PER_DAY}`);
+  parts.scene.replaceChildren(...view.scene(round));
   renderFeedback();
   renderTray();
   renderTill();
 }
 
-function renderHeader() {
-  const customer = round && !round.done ? today.served + 1 : today.served;
-  whereEl.textContent = `Day ${learner.day} · Customer ${Math.max(customer, 1)} of ${CUSTOMERS_PER_DAY}`;
-  purseEl.textContent = `${learner.coins} coins`;
-}
-
-function renderScene() {
-  const { problem, item, look } = round;
-  const mood = round.done ? 'happy' : round.wrong.length > 0 ? 'puzzled' : 'neutral';
-  const says = round.done
-    ? 'Thank you!'
-    : round.wrong.length > 0
-      ? 'Hmm, is that right?'
-      : `${item.ask}, please.`;
-  view.scene.replaceChildren(
-    h('div', { class: 'customer' }, h('div', { html: customerSvg(look, mood) }), h('p', { class: 'bubble' }, says)),
-    h(
-      'div',
-      { class: 'sale' },
-      h(
-        'div',
-        { class: 'item' },
-        h('span', { class: 'item-icon', 'aria-hidden': 'true' }, item.icon),
-        h('p', { class: 'tag' }, h('span', { class: 'tag-name' }, item.name), ' ', h('strong', {}, formatMoney(problem.price))),
-      ),
-      h(
-        'div',
-        { class: 'paid' },
-        h('p', { class: 'label' }, 'They hand you ', h('strong', {}, formatMoney(problem.paid))),
-        h('div', { class: 'pieces', html: breakdown(problem.paid).map(pieceSvg).join('') }),
-      ),
-    ),
-  );
-}
-
 function renderTray() {
-  const sum = total(round.tray);
-  const pieces = [...round.tray].sort((a, b) => b.cents - a.cents);
-  view.tray.replaceChildren(
-    h('h2', { class: 'label' }, 'Change you are handing back'),
+  const pieces = [...round.tray].sort((a, b) => b.value - a.value);
+  parts.tray.replaceChildren(
+    h('h2', { class: 'label' }, view.labels.tray),
+    view.trayExtra(round, trayTotal()),
     pieces.length === 0
-      ? h('p', { class: 'empty' }, round.done ? 'Handed over.' : 'Pick bills and coins from your till.')
+      ? h('p', { class: 'empty' }, round.done ? view.labels.given : view.labels.empty)
       : h(
           'div',
           { class: 'pieces' },
@@ -144,40 +182,39 @@ function renderTray() {
               type: 'button',
               disabled: round.done,
               'aria-label': `Take back a ${piece.name}`,
-              html: pieceSvg(piece),
+              html: view.pieceSvg(piece),
               onclick: () => removePiece(piece),
             }),
           ),
         ),
-    h('p', { class: 'sum' }, 'Total: ', h('strong', {}, formatMoney(sum))),
   );
-  view.actions.replaceChildren(
+  parts.actions.replaceChildren(
     h(
       'button',
       { class: 'quiet', type: 'button', disabled: round.done || pieces.length === 0, onclick: clearTray },
-      'Start over',
+      view.labels.clear,
     ),
     h(
       'button',
       { class: 'primary', type: 'button', id: 'hand-over', disabled: round.done || pieces.length === 0, onclick: handOver },
-      'Hand over the change',
+      view.labels.submit,
     ),
   );
 }
 
 function renderTill() {
-  view.till.replaceChildren(
-    h('h2', { class: 'label' }, 'Your till'),
+  parts.till.replaceChildren(
+    h('h2', { class: 'label' }, view.labels.pieces),
     h(
       'div',
       { class: 'pieces' },
-      TILL.map((piece) =>
+      view.pieces(round).map((piece) =>
         h('button', {
           class: 'piece',
           type: 'button',
           disabled: round.done,
           'aria-label': `Add a ${piece.name}`,
-          html: pieceSvg(piece),
+          html: view.pieceSvg(piece),
           onclick: () => addPiece(piece),
         }),
       ),
@@ -207,8 +244,9 @@ function clearTray() {
 // is one this player has already shown before.
 function chooseHint(result) {
   if (result.patterns.length === 1) return result.patterns[0];
+  const seen = learner.jobs[view.job.id]?.patterns ?? {};
   const known = result.patterns
-    .map((id) => ({ id, evidence: learner.patterns[id]?.evidence ?? 0 }))
+    .map((id) => ({ id, evidence: seen[id]?.evidence ?? 0 }))
     .filter((p) => p.evidence >= SUSPECTED)
     .sort((a, b) => b.evidence - a.evidence);
   return known[0]?.id ?? null;
@@ -216,38 +254,42 @@ function chooseHint(result) {
 
 function handOver() {
   if (round.done || round.tray.length === 0) return;
-  const answer = total(round.tray);
-  const result = diagnose(round.problem, answer);
+  const { job } = view;
+  const answer = trayTotal();
+  const result = diagnose(job, round.problem, answer);
   if (result.correct) {
-    const wasMastered = isMastered(learner, round.problem.skill);
-    recordResult(learner, round.problem, round.wrong);
+    const wasMastered = isMastered(learner, job, round.problem.skill);
+    recordResult(learner, job, round.problem, round.wrong);
     round.done = true;
     round.pay = PAY[Math.min(round.wrong.length, PAY.length - 1)];
     learner.coins += round.pay;
     today.served += 1;
     today.earned += round.pay;
     if (round.wrong.length === 0) today.firstTry += 1;
-    if (!wasMastered && isMastered(learner, round.problem.skill)) {
-      round.learned = SKILLS.find((s) => s.id === round.problem.skill);
+    if (!wasMastered && isMastered(learner, job, round.problem.skill)) {
+      round.learned = job.skills.find((s) => s.id === round.problem.skill);
       today.learned.push(round.learned.name);
     }
     saveLearner(learner);
     renderAll();
     document.getElementById('next')?.focus();
   } else {
+    const patternId = chooseHint(result);
+    const pattern = job.patterns.find((p) => p.id === patternId);
     round.result = result;
-    round.hint = chooseHint(result);
+    round.hint = pattern ? pattern.hint(round.problem, answer) : null;
     round.wrong.push(answer);
+    round.lastTray = round.tray;
     round.tray = [];
     renderAll();
-    view.feedback.focus();
+    parts.feedback.focus();
   }
 }
 
 function renderFeedback() {
   if (round.done) {
-    const last = today.served >= CUSTOMERS_PER_DAY;
-    view.feedback.replaceChildren(
+    const last = today.served >= TASKS_PER_DAY;
+    parts.feedback.replaceChildren(
       h(
         'div',
         { class: 'card thanks' },
@@ -257,117 +299,48 @@ function renderFeedback() {
         h(
           'button',
           { class: 'primary', type: 'button', id: 'next', onclick: last ? closeDay : startRound },
-          last ? 'Close the shop' : 'Next customer',
+          last ? 'Finish for the day' : view.labels.next,
         ),
       ),
     );
     return;
   }
   if (round.wrong.length === 0) {
-    view.feedback.replaceChildren();
+    parts.feedback.replaceChildren();
     return;
   }
-
-  const { problem, result, hint } = round;
-  const tries = round.wrong.length;
-  const steps = countUp(problem.price, problem.paid);
-  const tooMuch = result.diff > 0;
-  let note = null;
-  if (hint) {
-    note = getPattern(hint).hint(problem, result.answer);
-  } else if (result.slip) {
-    note = `You are very close. It is off by just one ${Math.abs(result.diff) >= 100 ? 'bill' : 'coin'}.`;
-  }
-
-  view.feedback.replaceChildren(
+  parts.feedback.replaceChildren(
     h(
       'div',
       { class: 'card check' },
       h('h2', {}, 'Nell: “Let’s check that.”'),
-      h('p', {}, `The price is ${formatMoney(problem.price)}. You handed back ${formatMoney(result.answer)}.`),
-      h(
-        'p',
-        { class: 'equation' },
-        `${formatMoney(problem.price)} + ${formatMoney(result.answer)} = ${formatMoney(problem.price + result.answer)}`,
-      ),
-      h(
-        'p',
-        {},
-        `The customer gave you ${formatMoney(problem.paid)}, so that is ${tooMuch ? 'too much' : 'not enough'} change.`,
-      ),
-      note && h('p', { class: 'note' }, note),
-      h(
-        'figure',
-        {},
-        h('figcaption', {}, 'Count up from the price to what they paid:'),
-        h('div', { html: numberLineSvg(steps, tries >= 2) }),
-      ),
-      tries >= 3 && h('p', { class: 'answer' }, `The change is ${formatMoney(result.expected)}.`),
+      view.check(round),
       h('p', { class: 'again' }, 'Try again.'),
     ),
   );
 }
 
-// ----------------------------------------------------------------- story
-
-function showIntro() {
-  round = null;
-  const start = h(
-    'button',
-    {
-      class: 'primary',
-      type: 'button',
-      onclick: () => {
-        learner.intro = true;
-        saveLearner(learner);
-        startRound();
-      },
-    },
-    'Open the shop',
-  );
-  app.replaceChildren(
-    h(
-      'section',
-      { class: 'card story' },
-      h('h2', {}, 'Nell’s Corner Shop'),
-      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
-      h('p', {}, 'Nell has run this corner shop for forty years.'),
-      h('p', {}, 'These days the small numbers on the coins are hard for her to read, and the shop is looking worn.'),
-      h('p', {}, 'She has hired you to work the counter. Give every customer the right change.'),
-      h('p', {}, 'You earn coins for your work. Spend them to fix up the shop.'),
-      start,
-    ),
-  );
-  whereEl.textContent = `Day ${learner.day}`;
-  purseEl.textContent = `${learner.coins} coins`;
-}
-
-function nellLine(day, firstTimeAllLearned) {
-  if (firstTimeAllLearned) {
-    return 'You can run the counter on your own now. I have been thinking about opening the old kitchen again.';
-  }
-  if (day.learned.length > 0) return 'You are learning fast. I can see it.';
-  if (day.firstTry === CUSTOMERS_PER_DAY) {
-    return 'Every customer got the right change, first time. The till adds up to the penny.';
-  }
-  if (day.firstTry >= CUSTOMERS_PER_DAY - 2) {
-    return 'A good day. We checked the tricky ones together, and the till adds up.';
-  }
-  return 'Some hard ones today. Checking them is how you get better. And the till adds up.';
-}
-
 // --------------------------------------------------------------- day end
 
 function closeDay() {
-  const firstTimeAllLearned = !currentSkill(learner) && !learner.toldAllLearned;
-  summary = { number: learner.day, ...today, line: nellLine(today, firstTimeAllLearned) };
-  if (firstTimeAllLearned) learner.toldAllLearned = true;
+  const { job } = view;
+  const firstTimeAllLearned = !currentSkill(learner, job) && !learner.told[job.id];
+  if (firstTimeAllLearned) learner.told[job.id] = true;
+  summary = {
+    number: learner.day,
+    ...today,
+    view,
+    line: firstTimeAllLearned
+      ? view.allLearnedLine
+      : today.learned.length > 0
+        ? 'You are learning fast. I can see it.'
+        : view.dayLine(today, TASKS_PER_DAY),
+  };
   learner.day += 1;
   saveLearner(learner);
-  today = newDay();
   round = null;
   renderDayEnd();
-  document.getElementById('open-shop').focus();
+  document.getElementById('to-street').focus();
 }
 
 function buy(upgrade) {
@@ -376,12 +349,13 @@ function buy(upgrade) {
   learner.shop.push(upgrade.id);
   saveLearner(learner);
   renderDayEnd();
-  (app.querySelector('.upgrades button:not(:disabled)') ?? document.getElementById('open-shop')).focus();
+  (app.querySelector('.upgrades button:not(:disabled)') ?? document.getElementById('to-street')).focus();
 }
 
 function renderDayEnd() {
-  const working = currentSkill(learner);
-  const record = working && learner.skills[working.id];
+  const { job } = summary.view;
+  const working = currentSkill(learner, job);
+  const record = working && learner.jobs[job.id]?.skills[working.id];
   const forSale = UPGRADES.filter((u) => !learner.shop.includes(u.id));
   app.replaceChildren(
     h(
@@ -392,7 +366,7 @@ function renderDayEnd() {
       h(
         'ul',
         { class: 'stats' },
-        h('li', {}, h('strong', {}, String(summary.served)), ' customers served'),
+        h('li', {}, h('strong', {}, String(summary.served)), ' jobs done'),
         h('li', {}, h('strong', {}, String(summary.firstTry)), ' right the first time'),
         h('li', {}, h('strong', {}, String(summary.earned)), ' coins earned'),
       ),
@@ -404,7 +378,7 @@ function renderDayEnd() {
             `Working on: ${working.name}`,
             record?.streak ? ` (${record.streak} of ${MASTERY_STREAK} in a row).` : '.',
           )
-        : h('p', {}, 'You have learned every skill at the counter.'),
+        : h('p', {}, 'You have learned every skill here.'),
     ),
     h(
       'section',
@@ -441,20 +415,20 @@ function renderDayEnd() {
     h(
       'div',
       { class: 'actions' },
-      h('button', { class: 'primary', type: 'button', id: 'open-shop', onclick: startRound }, `Open the shop for day ${learner.day}`),
+      h('button', { class: 'primary', type: 'button', id: 'to-street', onclick: showStreet }, 'Back to Main Street'),
     ),
   );
-  whereEl.textContent = `Day ${summary.number} · Shop closed`;
+  whereEl.textContent = `Day ${summary.number} · Finished`;
   purseEl.textContent = `${learner.coins} coins`;
 }
 
 // -------------------------------------------------------------- progress
 
-function skillStatus(skill) {
-  const record = learner.skills[skill.id];
+function skillStatus(job, skill) {
+  const record = learner.jobs[job.id]?.skills[skill.id];
   if (record?.mastered) return 'Learned';
   if (record?.attempts) return `${record.streak} of ${MASTERY_STREAK} in a row`;
-  return currentSkill(learner)?.id === skill.id ? 'Up next' : 'Not started';
+  return currentSkill(learner, job)?.id === skill.id ? 'Up next' : 'Not started';
 }
 
 function patternStatus(record) {
@@ -465,40 +439,45 @@ function patternStatus(record) {
 }
 
 function openProgress() {
-  const noticed = PATTERNS.filter((p) => learner.patterns[p.id]?.seen > 0);
   progressDialog.replaceChildren(
     h('h2', { id: 'progress-title', tabindex: '-1', autofocus: true }, 'Progress'),
-    h('h3', {}, 'Skills at the counter'),
-    h(
-      'ol',
-      { class: 'skills' },
-      SKILLS.map((skill) =>
+    ...VIEWS.flatMap((v) => {
+      const seen = learner.jobs[v.job.id]?.patterns ?? {};
+      const noticed = v.job.patterns.filter((p) => seen[p.id]?.seen > 0);
+      return [
+        h('h3', {}, `${v.title}: ${v.subject.toLowerCase()}`),
         h(
-          'li',
-          { class: isMastered(learner, skill.id) ? 'mastered' : '' },
-          h('strong', {}, skill.name),
-          h('span', { class: 'status' }, skillStatus(skill)),
-          h('span', { class: 'about' }, skill.about),
-        ),
-      ),
-    ),
-    h('h3', {}, 'Mistake patterns noticed'),
-    noticed.length === 0
-      ? h('p', { class: 'about' }, 'None so far.')
-      : h(
-          'ul',
-          { class: 'noticed' },
-          noticed.map((pattern) =>
+          'ol',
+          { class: 'skills' },
+          v.job.skills.map((skill) =>
             h(
               'li',
               {},
-              h('strong', {}, pattern.name),
-              h('span', { class: 'status' }, patternStatus(learner.patterns[pattern.id])),
-              h('span', { class: 'about' }, pattern.about),
+              h('strong', {}, skill.name),
+              h('span', { class: 'status' }, skillStatus(v.job, skill)),
+              h('span', { class: 'about' }, skill.about),
             ),
           ),
         ),
-    h('p', { class: 'about' }, 'Progress is kept in this browser only. Nothing is sent anywhere.'),
+        h('h4', {}, 'Mistake patterns noticed'),
+        noticed.length === 0
+          ? h('p', { class: 'about' }, 'None so far.')
+          : h(
+              'ul',
+              { class: 'noticed' },
+              noticed.map((pattern) =>
+                h(
+                  'li',
+                  {},
+                  h('strong', {}, pattern.name),
+                  h('span', { class: 'status' }, patternStatus(seen[pattern.id])),
+                  h('span', { class: 'about' }, rich(pattern.about)),
+                ),
+              ),
+            ),
+      ];
+    }),
+    h('p', { class: 'about privacy' }, 'Progress is kept in this browser only. Nothing is sent anywhere.'),
     h(
       'div',
       { class: 'actions' },
@@ -514,14 +493,13 @@ function resetProgress() {
   if (!confirm('Erase all progress and start again from day 1?')) return;
   clearLearner();
   learner = freshSave();
-  today = newDay();
   progressDialog.close();
   showIntro();
 }
 
 document.getElementById('open-progress').addEventListener('click', openProgress);
 
-if (learner.intro) startRound();
+if (learner.intro) showStreet();
 else showIntro();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

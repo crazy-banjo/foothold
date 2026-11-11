@@ -488,7 +488,163 @@ figcaption {
   padding: 6px 16px;
 }
 
+/* -------------------------------------------------------- main street */
+
+.street {
+  display: grid;
+  gap: 12px;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.job h3,
+.later h3 {
+  font-size: 1.1rem;
+}
+
+.job .status {
+  grid-column: 1;
+  margin: 0;
+}
+
+.job .primary {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.later {
+  color: var(--soft);
+}
+
+.later ul {
+  margin-top: 6px;
+  padding-left: 22px;
+}
+
+/* ------------------------------------------------------------ kitchen */
+
+.frac math {
+  font-family: inherit;
+  font-size: 1.15em;
+}
+
+.recipe {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+}
+
+.recipe-name {
+  font-size: 1.2rem;
+}
+
+.bowl-holder {
+  display: grid;
+  justify-items: center;
+}
+
+.bowl-glass {
+  fill: var(--bg);
+}
+
+.bowl-added {
+  fill: #e9b949;
+}
+
+.bowl-already {
+  fill: #b98a2c;
+}
+
+.bowl-edge {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.bowl-over {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bars {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+}
+
+.bar-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bar-note {
+  fill: var(--soft);
+  font-size: 11px;
+}
+
+.cup-outline {
+  fill: none;
+  stroke: var(--soft);
+  stroke-width: 1.5;
+}
+
+.bar {
+  stroke: var(--card);
+  stroke-width: 1.5;
+}
+
+.bar-need {
+  fill: var(--accent);
+}
+
+.bar-faint {
+  fill: var(--accent);
+  opacity: 0.35;
+}
+
+.bar-added {
+  fill: #e9b949;
+}
+
+.bar-already {
+  fill: #b98a2c;
+}
+
+.bar-mark {
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+
+.mark-note {
+  font-size: 0.9rem;
+  color: var(--soft);
+}
+
 /* ----------------------------------------------------------- progress */
+
+dialog h4 {
+  margin: 12px 0 4px;
+  font-size: 0.9rem;
+  color: var(--soft);
+}
+
+.privacy {
+  margin-top: 16px;
+}
+
 
 dialog {
   width: min(560px, calc(100vw - 32px));

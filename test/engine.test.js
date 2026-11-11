@@ -1,9 +1,14 @@
+// The shop counter job, and the general learner model exercised through it.
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SKILLS, generate, correctChange } from '../src/engine/change.js';
-import { countUp } from '../src/engine/countup.js';
-import { diagnose } from '../src/engine/diagnose.js';
+import { SKILLS, generate } from '../src/counter/change.js';
+import { countUp } from '../src/counter/countup.js';
+import { counterJob as job } from '../src/counter/job.js';
+import { TILL, breakdown, formatMoney, total } from '../src/counter/money.js';
+import { PATTERNS } from '../src/counter/patterns.js';
+import { diagnose, predict } from '../src/engine/diagnose.js';
 import {
   MASTERY_STREAK,
   currentSkill,
@@ -12,11 +17,10 @@ import {
   recordResult,
   suspectedPatterns,
 } from '../src/engine/learner.js';
-import { TILL, breakdown, formatMoney, total } from '../src/engine/money.js';
-import { PATTERNS, getPattern, predict } from '../src/engine/patterns.js';
 import { createRng } from '../src/engine/rng.js';
 
-const predicted = (id, price, paid) => predict(getPattern(id), { price, paid });
+const pattern = (id) => PATTERNS.find((p) => p.id === id);
+const predicted = (id, price, paid) => predict(job, pattern(id), { price, paid });
 
 function samples(count = 300) {
   const rng = createRng(42);
@@ -115,21 +119,21 @@ test('patterns never apply when no regrouping is needed', () => {
 
 test('a pattern never predicts the right answer or a non-positive amount', () => {
   for (const problem of samples()) {
-    for (const pattern of PATTERNS) {
-      const amount = predict(pattern, problem);
+    for (const p of PATTERNS) {
+      const amount = predict(job, p, problem);
       if (amount === null) continue;
       assert.ok(amount > 0);
-      assert.notEqual(amount, correctChange(problem));
+      assert.notEqual(amount, job.expected(problem));
     }
   }
 });
 
 test('pattern hints are sentences for every situation they apply to', () => {
   for (const problem of samples(100)) {
-    for (const pattern of PATTERNS) {
-      const amount = predict(pattern, problem);
+    for (const p of PATTERNS) {
+      const amount = predict(job, p, problem);
       if (amount === null) continue;
-      const hint = pattern.hint(problem, amount);
+      const hint = p.hint(problem, amount);
       assert.equal(typeof hint, 'string');
       assert.ok(hint.length > 20);
       assert.ok(!/undefined|NaN|\$-|-\d/.test(hint), hint);
@@ -140,19 +144,19 @@ test('pattern hints are sentences for every situation they apply to', () => {
 test('diagnose recognises right answers, patterns and slips', () => {
   const problem = { skill: 'dollars-and-dimes', price: 240, paid: 500 };
 
-  assert.equal(diagnose(problem, 260).correct, true);
+  assert.equal(diagnose(job, problem, 260).correct, true);
 
-  const tooMuch = diagnose(problem, 360);
+  const tooMuch = diagnose(job, problem, 360);
   assert.equal(tooMuch.correct, false);
   assert.equal(tooMuch.diff, 100);
   assert.deepEqual(tooMuch.patterns, ['regroup-without-reducing']);
   assert.equal(tooMuch.slip, false);
 
-  const slip = diagnose(problem, 250);
+  const slip = diagnose(job, problem, 250);
   assert.deepEqual(slip.patterns, []);
   assert.equal(slip.slip, true);
 
-  const unknown = diagnose(problem, 417);
+  const unknown = diagnose(job, problem, 417);
   assert.deepEqual(unknown.patterns, []);
   assert.equal(unknown.slip, false);
 });
@@ -174,58 +178,59 @@ test('counting up always lands on the right change', () => {
     assert.equal(steps.at(-1).to, problem.paid);
     assert.equal(
       steps.reduce((sum, s) => sum + s.add, 0),
-      correctChange(problem),
+      job.expected(problem),
     );
     for (const step of steps) assert.ok(step.add > 0);
   }
 });
 
 test('every right answer can be made from the till', () => {
-  const smallest = Math.min(...TILL.map((d) => d.cents));
-  assert.equal(smallest, 1);
+  assert.equal(Math.min(...TILL.map((d) => d.cents)), 1);
   assert.ok(TILL.every((d) => d.id !== 'twenty'));
 });
 
 test('a skill is mastered after enough first-try successes in a row', () => {
   const learner = newLearner();
   const problem = { skill: 'whole-dollars', price: 300, paid: 500 };
-  assert.equal(currentSkill(learner).id, 'whole-dollars');
-  recordResult(learner, problem, []);
-  recordResult(learner, problem, [100]);
-  for (let i = 0; i < MASTERY_STREAK - 1; i++) recordResult(learner, problem, []);
-  assert.equal(currentSkill(learner).id, 'whole-dollars');
-  recordResult(learner, problem, []);
-  assert.equal(currentSkill(learner).id, 'dimes-from-dollar');
-  assert.equal(learner.skills['whole-dollars'].attempts, MASTERY_STREAK + 2);
+  assert.equal(currentSkill(learner, job).id, 'whole-dollars');
+  recordResult(learner, job, problem, []);
+  recordResult(learner, job, problem, [100]);
+  for (let i = 0; i < MASTERY_STREAK - 1; i++) recordResult(learner, job, problem, []);
+  assert.equal(currentSkill(learner, job).id, 'whole-dollars');
+  recordResult(learner, job, problem, []);
+  assert.equal(currentSkill(learner, job).id, 'dimes-from-dollar');
+  assert.equal(learner.jobs.counter.skills['whole-dollars'].attempts, MASTERY_STREAK + 2);
 });
 
 test('evidence for a pattern builds with errors and fades with successes', () => {
   const learner = newLearner();
   const problem = { skill: 'dollars-and-dimes', price: 240, paid: 500 };
-  recordResult(learner, problem, [360]);
+  recordResult(learner, job, problem, [360]);
   assert.deepEqual(
-    suspectedPatterns(learner).map((s) => s.id),
+    suspectedPatterns(learner, job).map((s) => s.id),
     ['regroup-without-reducing'],
   );
-  recordResult(learner, problem, [360, 250]);
-  assert.equal(learner.patterns['regroup-without-reducing'].evidence, 2);
-  assert.equal(learner.patterns['regroup-without-reducing'].seen, 2);
+  recordResult(learner, job, problem, [360, 250]);
+  const seen = learner.jobs.counter.patterns['regroup-without-reducing'];
+  assert.equal(seen.evidence, 2);
+  assert.equal(seen.seen, 2);
 
-  for (let i = 0; i < 4; i++) recordResult(learner, problem, []);
-  assert.deepEqual(suspectedPatterns(learner), []);
+  for (let i = 0; i < 4; i++) recordResult(learner, job, problem, []);
+  assert.deepEqual(suspectedPatterns(learner, job), []);
 });
 
 test('a suspected pattern steers the next situation towards ones that test it', () => {
   const learner = newLearner();
+  learner.jobs.counter = { skills: {}, patterns: {}, lastKey: null };
   for (const id of ['whole-dollars', 'dimes-from-dollar', 'dollars-and-dimes', 'cents-from-dollar']) {
-    learner.skills[id] = { attempts: 3, firstTry: 3, streak: 3, mastered: true };
+    learner.jobs.counter.skills[id] = { attempts: 3, firstTry: 3, streak: 3, mastered: true };
   }
-  learner.patterns['zero-stays-ten'] = { evidence: 2, seen: 2 };
+  learner.jobs.counter.patterns['zero-stays-ten'] = { evidence: 2, seen: 2 };
   const rng = createRng(3);
   let applicable = 0;
   for (let i = 0; i < 100; i++) {
-    const problem = nextProblem(learner, rng);
-    if (predict(getPattern('zero-stays-ten'), problem) !== null) applicable += 1;
+    const problem = nextProblem(learner, job, rng);
+    if (predict(job, pattern('zero-stays-ten'), problem) !== null) applicable += 1;
   }
   // About a quarter of situations are review of earlier skills.
   assert.ok(applicable >= 70, `only ${applicable} of 100 situations tested the pattern`);
@@ -237,14 +242,14 @@ test('nextProblem works through every skill and never repeats back to back', () 
   const seen = new Set();
   let previous = null;
   for (let i = 0; i < 400; i++) {
-    const problem = nextProblem(learner, rng);
+    const problem = nextProblem(learner, job, rng);
     assert.ok(problem.price < problem.paid);
-    const key = `${problem.price}/${problem.paid}`;
+    const key = job.key(problem);
     assert.notEqual(key, previous);
     previous = key;
     seen.add(problem.skill);
-    recordResult(learner, problem, []);
+    recordResult(learner, job, problem, []);
   }
   assert.equal(seen.size, SKILLS.length);
-  assert.equal(currentSkill(learner), null);
+  assert.equal(currentSkill(learner, job), null);
 });

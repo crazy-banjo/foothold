@@ -1,6 +1,6 @@
 // All pictures are drawn in code as SVG, so the game needs no image files.
 
-import { formatMoney } from '../engine/money.js';
+import { formatMoney } from '../counter/money.js';
 
 // Coin sizes keep the real order: the dime is the smallest coin.
 const COIN_SIZE = { quarter: 46, nickel: 40, penny: 36, dime: 32 };

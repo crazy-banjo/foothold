@@ -2,9 +2,7 @@
 //
 // Each pattern is a small model of one wrong way of thinking. Given a
 // situation, `predict` returns the amount a person would hand back if they
-// were thinking that way, or null when the pattern doesn't apply (or would
-// happen to give the right answer). Diagnosis is then a matter of asking
-// which patterns predict the amount that was actually handed over.
+// were thinking that way, or null when the pattern doesn't apply.
 //
 // The column patterns follow the subtraction "bugs" catalogued by Brown and
 // Burton (1978) and VanLehn (1990), applied to dollars, dimes and pennies.
@@ -148,17 +146,3 @@ export const PATTERNS = [
       `${formatMoney(answer)} gets the customer up to ${formatMoney(price + answer)}. They paid ${formatMoney(paid)}, so there is more to hand back.`,
   },
 ];
-
-const BY_ID = new Map(PATTERNS.map((p) => [p.id, p]));
-
-export function getPattern(id) {
-  return BY_ID.get(id);
-}
-
-/** What this pattern would hand back, or null if it doesn't apply here. */
-export function predict(pattern, problem) {
-  const amount = pattern.predict(problem);
-  if (amount === null || amount <= 0) return null;
-  if (amount === problem.paid - problem.price) return null;
-  return amount;
-}

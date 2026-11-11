@@ -2,23 +2,31 @@
 // (so updates arrive straight away) and kept in a cache, which is used
 // whenever the network is not available.
 
-const CACHE = 'foothold-v1';
+const CACHE = 'foothold-v2';
 
 const FILES = [
   './',
   './index.html',
   './styles.css',
-  './src/game/main.js',
-  './src/game/art.js',
-  './src/game/goods.js',
-  './src/game/storage.js',
-  './src/engine/change.js',
-  './src/engine/countup.js',
+  './src/counter/change.js',
+  './src/counter/countup.js',
+  './src/counter/job.js',
+  './src/counter/money.js',
+  './src/counter/patterns.js',
   './src/engine/diagnose.js',
   './src/engine/learner.js',
-  './src/engine/money.js',
-  './src/engine/patterns.js',
   './src/engine/rng.js',
+  './src/game/art.js',
+  './src/game/counter-view.js',
+  './src/game/dom.js',
+  './src/game/goods.js',
+  './src/game/kitchen-view.js',
+  './src/game/main.js',
+  './src/game/storage.js',
+  './src/kitchen/fractions.js',
+  './src/kitchen/job.js',
+  './src/kitchen/patterns.js',
+  './src/kitchen/problems.js',
 ];
 
 self.addEventListener('install', (event) => {
