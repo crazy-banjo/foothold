@@ -175,6 +175,7 @@ function markSize(problem) {
 
 export const kitchenView = {
   job: kitchenJob,
+  boss: 'Nell',
   title: 'Nell’s kitchen',
   subject: 'Fractions',
   blurb: 'Measure what each recipe needs.',

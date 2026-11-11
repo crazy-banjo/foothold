@@ -13,16 +13,20 @@ street.
 |---|---|---|
 | Nell's shop counter | Money, subtraction | Hand customers their change from the till |
 | Nell's kitchen | Fractions | Measure ingredients with whichever scoops are clean |
+| The delivery depot | Ratio and rate (pre-algebra) | Pump just enough fuel for the van's trip |
 
 ![The shop counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
 
 ![The kitchen after a wrong answer: the game compares what the recipe needs with what is in the bowl, using bars drawn to scale.](docs/kitchen.png)
 
+![The depot after a wrong answer: the game says how far the pumped fuel would take the van, and shows the van's trip table.](docs/depot.png)
+
 When an answer is wrong, Foothold does three things:
 
 1. **Checks it in the terms of the job.** At the counter it adds the change
    back to the price. In the kitchen it draws what is needed and what is in
-   the bowl as bars, to scale.
+   the bowl as bars, to scale. At the depot it says how far that much fuel
+   would take the van.
 2. **Looks for the reason.** It compares what was handed over with what a
    set of known mistake patterns would produce. Handing back $3.60 for a
    $2.40 item paid with $5.00 is the result of breaking a dollar into dimes
@@ -38,8 +42,8 @@ in the browser it is played in.
 
 ## Status
 
-Early. Two jobs exist, with six skills each. Money is US currency and
-measures are US cups. It has not yet been tried with children, so the
+Early. Three jobs exist, with five or six skills each. Money is US currency
+and measures are US cups, gallons and miles. It has not yet been tried with children, so the
 difficulty curve and the wording of the hints are untested guesses.
 
 ## Play it
@@ -93,10 +97,22 @@ In the kitchen:
 | Adds instead of multiplying | two batches of 3/8 cup = 5/8 cup |
 | Halves the bottom number | half of 1/4 cup = 1/2 cup |
 
+At the depot (2 gallons go 30 miles; the trip is 90 miles; the answer is 6):
+
+| Pattern | Pumps |
+|---|---|
+| Adds instead of scaling | 62 gallons (90 is 60 more than 30) |
+| Pumps the fuel for the known trip | 2 gallons |
+| Stops at how many times as far | 3 gallons |
+| Divides the miles by the gallons | 45 gallons |
+| Forgets the way back | half of what a return trip needs |
+| Ignores the fuel already in the tank | the fuel for the whole trip |
+
 The counter's column patterns follow the subtraction "bugs" catalogued by
 Brown and Burton (1978) and VanLehn (1990). Most of the kitchen's patterns
 come from treating the top and bottom of a fraction as two separate whole
-numbers, often called whole-number bias.
+numbers, often called whole-number bias. The depot's first pattern is
+additive reasoning, the most widely reported error in ratio problems.
 
 One wrong answer is weak evidence, and sometimes more than one pattern
 explains it. So the game keeps a running level of evidence for each pattern.
@@ -118,7 +134,8 @@ it provides): its skills in teaching order, a generator of situations, the
 right answer for a situation, and its mistake patterns. Every answer is a
 whole number of some small unit, such as cents or twenty-fourths of a cup.
 The learner model, the diagnosis and the choice of the next situation are
-shared by all jobs. A job also needs a screen in `src/game/`.
+shared by all jobs. A job also needs a screen in `src/game/`, which either
+hands over pieces (bills, scoops) or has its own control (the fuel pump).
 
 ## Layout
 
@@ -131,8 +148,9 @@ src/engine/              shared by every job: no browser code
   rng.js                 a seeded random number generator
 src/counter/             the shop counter: money, situations, patterns
 src/kitchen/             the kitchen: fractions, situations, patterns
+src/depot/               the delivery depot: trips, situations, patterns
 src/game/                the screens: Main Street, each job, the story
-test/                    tests for the engine and both jobs
+test/                    tests for the engine and every job
 ```
 
 ## Tests
@@ -147,7 +165,6 @@ Needs Node.js 20 or later. Nothing to install.
 
 More buildings on Main Street, each with its own way of playing:
 
-- **Delivery depot** (pre-algebra): routes, speeds, times
 - **Town office** (algebra): prices, break-even
 - **Workshop** (geometry): measure, cut, fit
 

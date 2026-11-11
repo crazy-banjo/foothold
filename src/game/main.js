@@ -15,14 +15,14 @@ import {
 import { createRng } from '../engine/rng.js';
 import { shopSvg } from './art.js';
 import { counterView } from './counter-view.js';
+import { depotView } from './depot-view.js';
 import { h, rich } from './dom.js';
 import { UPGRADES } from './goods.js';
 import { kitchenView } from './kitchen-view.js';
 import { clearLearner, freshSave, loadLearner, saveLearner } from './storage.js';
 
-const VIEWS = [counterView, kitchenView];
+const VIEWS = [counterView, kitchenView, depotView];
 const COMING_LATER = [
-  { title: 'Delivery depot', subject: 'Pre-algebra' },
   { title: 'Town office', subject: 'Algebra' },
   { title: 'Workshop', subject: 'Geometry' },
 ];
@@ -54,6 +54,8 @@ function setHeader(where) {
 }
 
 const trayTotal = () => round.tray.reduce((sum, piece) => sum + piece.value, 0);
+/** The amount that would be handed over right now. */
+const answerNow = () => (view.control ? round.amount : trayTotal());
 
 // ----------------------------------------------------------------- story
 
@@ -78,7 +80,7 @@ function showIntro() {
       h('h2', {}, 'Welcome to Foothold'),
       h('div', { html: shopSvg(learner.shop, UPGRADES) }),
       h('p', {}, 'Foothold is a small town at the foot of the hills. Its main street has seen better days.'),
-      h('p', {}, 'Nell has run the corner shop for forty years. She needs help at the counter and in the kitchen.'),
+      h('p', {}, 'Nell needs help in her corner shop and its kitchen. Sam needs help at the delivery depot.'),
       h('p', {}, 'Every job here is real work. Do it well and you earn coins.'),
       h('p', {}, 'Spend your coins to fix up the street, starting with Nell’s shop.'),
       start,
@@ -138,6 +140,7 @@ function startRound() {
     problem,
     extra: view.setUp(problem, rng),
     tray: [],
+    amount: 0,
     lastTray: [],
     wrong: [],
     result: null,
@@ -163,8 +166,7 @@ function renderAll() {
   setHeader(`${view.taskWord} ${task} of ${TASKS_PER_DAY}`);
   parts.scene.replaceChildren(...view.scene(round));
   renderFeedback();
-  renderTray();
-  renderTill();
+  renderInput();
 }
 
 function renderTray() {
@@ -194,18 +196,41 @@ function renderTray() {
       round.done ? view.labels.given : pieces.length === 0 ? view.labels.empty : view.labels.undo,
     ),
   );
+  renderActions();
+}
+
+function renderActions() {
+  const nothing = round.done || answerNow() <= 0;
   parts.actions.replaceChildren(
+    h('button', { class: 'quiet', type: 'button', disabled: nothing, onclick: clearTray }, view.labels.clear),
     h(
       'button',
-      { class: 'quiet', type: 'button', disabled: round.done || pieces.length === 0, onclick: clearTray },
-      view.labels.clear,
-    ),
-    h(
-      'button',
-      { class: 'primary', type: 'button', id: 'hand-over', disabled: round.done || pieces.length === 0, onclick: handOver },
+      { class: 'primary', type: 'button', id: 'hand-over', disabled: nothing, onclick: handOver },
       view.labels.submit,
     ),
   );
+}
+
+// A job either hands over pieces from a till (bills, scoops) or has its
+// own control for setting an amount (the fuel pump).
+function renderInput() {
+  parts.till.hidden = Boolean(view.control);
+  if (view.control) {
+    parts.tray.replaceChildren(
+      h('h2', { class: 'label' }, view.labels.tray),
+      view.control(round, {
+        amount: round.amount,
+        set: (amount) => {
+          round.amount = amount;
+          renderActions();
+        },
+      }),
+    );
+    renderActions();
+  } else {
+    renderTray();
+    renderTill();
+  }
 }
 
 function renderTill() {
@@ -242,7 +267,8 @@ function removePiece(piece) {
 
 function clearTray() {
   round.tray = [];
-  renderTray();
+  round.amount = 0;
+  renderInput();
 }
 
 // A hint about a mistake pattern is only given when the evidence points to
@@ -259,9 +285,9 @@ function chooseHint(result) {
 }
 
 function handOver() {
-  if (round.done || round.tray.length === 0) return;
+  if (round.done || answerNow() <= 0) return;
   const { job } = view;
-  const answer = trayTotal();
+  const answer = answerNow();
   const result = diagnose(job, round.problem, answer);
   if (result.correct) {
     const wasMastered = isMastered(learner, job, round.problem.skill);
@@ -287,6 +313,7 @@ function handOver() {
     round.wrong.push(answer);
     round.lastTray = round.tray;
     round.tray = [];
+    round.amount = 0;
     renderAll();
     parts.feedback.focus();
   }
@@ -319,7 +346,7 @@ function renderFeedback() {
     h(
       'div',
       { class: 'card check' },
-      h('h2', {}, 'Nell: “Let’s check that.”'),
+      h('h2', {}, `${view.boss}: “Let’s check that.”`),
       view.check(round),
       h('p', { class: 'again' }, 'Try again.'),
     ),
@@ -368,7 +395,7 @@ function renderDayEnd() {
       'section',
       { class: 'card day-end' },
       h('h2', {}, `Day ${summary.number} is done`),
-      h('p', { class: 'nell' }, h('strong', {}, 'Nell: '), `“${summary.line}”`),
+      h('p', { class: 'nell' }, h('strong', {}, `${summary.view.boss}: `), `“${summary.line}”`),
       h(
         'ul',
         { class: 'stats' },

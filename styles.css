@@ -638,6 +638,85 @@ figcaption {
   color: var(--soft);
 }
 
+/* -------------------------------------------------------------- depot */
+
+[hidden] {
+  display: none !important;
+}
+
+.pump {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.tank {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.tank-pumped {
+  fill: #e9b949;
+}
+
+.tank-already {
+  fill: #b98a2c;
+}
+
+.tank-cap {
+  fill: var(--soft);
+}
+
+.pump-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pump-display {
+  min-width: 7.5em;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.pump-step {
+  min-width: 56px;
+  padding: 10px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-table {
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-table th,
+.trip-table td {
+  padding: 6px 14px;
+  border: 1.5px solid var(--check-line);
+  text-align: center;
+}
+
+.trip-table th {
+  text-align: left;
+  font-weight: 600;
+}
+
+.trip-table td {
+  min-width: 3em;
+  font-weight: 700;
+}
+
 /* ----------------------------------------------------------- progress */
 
 dialog h4 {
@@ -708,6 +787,17 @@ dialog h2:focus {
 }
 
 @media (max-width: 420px) {
+  .pump-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+  }
+
+  .pump-display {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
   .till .bill {
     width: 74px;
     height: 34px;

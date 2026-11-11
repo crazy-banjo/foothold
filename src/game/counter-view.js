@@ -12,6 +12,7 @@ const PIECES = TILL.map((d) => ({ ...d, value: d.cents }));
 
 export const counterView = {
   job: counterJob,
+  boss: 'Nell',
   title: 'Nell’s shop counter',
   subject: 'Money',
   blurb: 'Hand each customer the right change.',
