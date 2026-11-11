@@ -44,6 +44,18 @@ export function pickItem(price, rng) {
   return rng.pick(GOODS.find((band) => price <= band.upTo).items);
 }
 
+// Things wages can be spent on, in the order they are offered.
+export const UPGRADES = [
+  { id: 'paint', name: 'Fresh paint', price: 40 },
+  { id: 'flowers', name: 'Flower boxes', price: 50 },
+  { id: 'sign', name: 'A new sign', price: 60 },
+  { id: 'display', name: 'A window display', price: 70 },
+  { id: 'awning', name: 'A striped awning', price: 80 },
+  { id: 'lamp', name: 'A street lamp', price: 60 },
+  { id: 'bench', name: 'A bench outside', price: 90 },
+  { id: 'cat', name: 'A bed for the shop cat', price: 120 },
+];
+
 const SKIN = ['#f6d3b3', '#e8b48a', '#c98d5e', '#9a6340', '#6f4428'];
 const HAIR = ['#2b1d16', '#5a3a22', '#a8672c', '#d9b25f', '#8d8f96', '#b5432e'];
 const SHIRT = ['#2f7f6b', '#3d6fb0', '#c2553f', '#8a5aa8', '#d09a2a', '#4f8f3a'];

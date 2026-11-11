@@ -47,6 +47,68 @@ export function customerSvg(look, mood) {
   </svg>`;
 }
 
+/** The shop front. It starts out worn and improves with each upgrade. */
+export function shopSvg(owned, upgrades) {
+  const has = (id) => owned.includes(id);
+  const painted = has('paint');
+  const wall = painted ? '#f3dfae' : '#b8b0a3';
+  const trim = painted ? '#1f7a5c' : '#857c70';
+  const names = upgrades.filter((u) => has(u.id)).map((u) => u.name.toLowerCase());
+  const label = names.length
+    ? `Nell’s shop, now with: ${names.join(', ')}.`
+    : 'Nell’s shop. The paint is cracked and the sign is missing a letter.';
+  const flowers = [0, 1, 2, 3, 4, 5, 6]
+    .map((i) => `<circle cx="${69 + i * 15}" cy="149" r="5" fill="${i % 2 ? '#f2c14e' : '#e2607a'}"/>`)
+    .join('');
+  const stripes = [0, 1, 2, 3, 4]
+    .map((i) => `<rect x="${72 + i * 44}" y="80" width="22" height="16" fill="#fff" opacity=".85"/>`)
+    .join('');
+  return `<svg class="shop" viewBox="0 0 320 200" role="img" aria-label="${label}">
+    <rect x="0" y="178" width="320" height="22" fill="#9a9488"/>
+    <rect x="40" y="46" width="240" height="134" fill="${wall}" stroke="${trim}" stroke-width="3"/>
+    ${painted ? '' : '<path d="M70 58l8 14-5 10M262 112l-9 12 6 12M186 96l4 12-3 8" fill="none" stroke="#857c70" stroke-width="1.5"/>'}
+    ${
+      has('sign')
+        ? `<rect x="76" y="52" width="168" height="26" rx="4" fill="#1f7a5c"/>
+           <text x="160" y="71" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1" fill="#fff">NELL’S SHOP</text>`
+        : `<g transform="rotate(-4 160 65)"><rect x="100" y="54" width="120" height="22" fill="#9b9285" stroke="#7a7266"/>
+           <text x="160" y="70" text-anchor="middle" font-size="13" letter-spacing="3" fill="#6f675c">SH P</text></g>`
+    }
+    <rect x="58" y="92" width="112" height="60" fill="${has('display') ? '#cfeaf5' : '#aab6b8'}" stroke="${trim}" stroke-width="3"/>
+    ${
+      has('display')
+        ? `<rect x="66" y="136" width="96" height="3" fill="#a87947"/>
+           <ellipse cx="86" cy="128" rx="15" ry="8" fill="#d39b52"/>
+           <circle cx="113" cy="129" r="7" fill="#d9483b"/><circle cx="127" cy="129" r="7" fill="#e5a93a"/>
+           <rect x="141" y="116" width="13" height="20" rx="2" fill="#e8c05a"/><rect x="140" y="112" width="15" height="5" fill="#8a5a2b"/>`
+        : '<path d="M66 100l20 20M148 100l14 14M70 142l12-12" stroke="#8f9a9c" stroke-width="2"/>'
+    }
+    <rect x="198" y="92" width="54" height="88" fill="${painted ? '#8a5a2b' : '#75695b'}" stroke="${trim}" stroke-width="3"/>
+    <rect x="208" y="102" width="34" height="30" fill="#cfeaf5" opacity=".8"/>
+    <circle cx="244" cy="142" r="3" fill="#e2b13c"/>
+    ${has('awning') ? `<path d="M50 80h220l10 16H40z" fill="#c2553f"/>${stripes}` : ''}
+    ${has('flowers') ? `<rect x="58" y="152" width="112" height="9" fill="#8a5a2b"/>${flowers}` : ''}
+    ${
+      has('bench')
+        ? '<rect x="70" y="166" width="88" height="5" fill="#a87947"/><rect x="75" y="171" width="4" height="9" fill="#7a5632"/><rect x="149" y="171" width="4" height="9" fill="#7a5632"/>'
+        : ''
+    }
+    ${
+      has('lamp')
+        ? '<rect x="297" y="92" width="4" height="88" fill="#3d3a36"/><circle cx="299" cy="84" r="9" fill="#ffd866" stroke="#3d3a36" stroke-width="2"/>'
+        : ''
+    }
+    ${
+      has('cat')
+        ? `<path d="M263 176q-9-2-6-10" fill="none" stroke="#e07f33" stroke-width="3" stroke-linecap="round"/>
+           <ellipse cx="271" cy="172" rx="9" ry="7" fill="#f08a3c"/><circle cx="278" cy="162" r="6" fill="#f08a3c"/>
+           <path d="M273 158l1-6 4 4zM280 156l4-4 0 6z" fill="#f08a3c"/>
+           <circle cx="276" cy="162" r="1" fill="#2b2622"/><circle cx="281" cy="162" r="1" fill="#2b2622"/>`
+        : ''
+    }
+  </svg>`;
+}
+
 /**
  * A number line from the price up to what was paid, one hop per step.
  * The size of each hop is shown only when `showAmounts` is true.

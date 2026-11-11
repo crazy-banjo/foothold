@@ -3,8 +3,10 @@
 A free math game where the math is the job, and where a wrong answer is
 treated as information about *how* the player is thinking.
 
-You run a shop counter. A customer buys something and pays. Nothing asks
-"what is $5.00 − $2.40?" You open the till and hand back the change.
+Nell has run her corner shop for forty years, and it is looking worn. She
+hires you to work the counter. A customer buys something and pays. Nothing
+asks "what is $5.00 − $2.40?" You open the till and hand back the change.
+The coins you earn are your wages, and you spend them fixing up the shop.
 
 ![The shop counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
 
@@ -34,7 +36,9 @@ curve and the wording of the hints are untested guesses.
 
 ## Play it
 
-Foothold is plain HTML, CSS and JavaScript with no build step and no
+Play in the browser at <https://crazy-banjo.github.io/foothold/>.
+
+To run your own copy: Foothold is plain HTML, CSS and JavaScript with no build step and no
 dependencies. Browsers will not load it straight from a file, so it needs
 any static web server:
 
@@ -42,7 +46,7 @@ any static web server:
 npm start
 ```
 
-Then open <http://localhost:8000>. Once it has been loaded from a web
+Then open <http://localhost:8000>. Once the game has been loaded from a web
 address it keeps working without a connection.
 
 Adding `?seed=7` to the address replays the same run of customers.
@@ -102,7 +106,7 @@ Needs Node.js 20 or later. Nothing to install.
 ## Where this is going
 
 The counter is the first of several jobs, each one a real task that needs
-the math of its level:
+the math of its level. In the story, each is a new part of Nell's business:
 
 - **Kitchen** (fractions): scale recipes, split portions
 - **Deliveries** (pre-algebra): routes, speeds, times

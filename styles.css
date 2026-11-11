@@ -434,6 +434,60 @@ figcaption {
   font-variant-numeric: tabular-nums;
 }
 
+.nell {
+  padding-left: 12px;
+  border-left: 4px solid var(--accent);
+}
+
+.story,
+.fix-up {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.fix-up > div,
+.story > div {
+  width: 100%;
+}
+
+.shop {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 10px;
+  background: #cfe3ee;
+}
+
+.upgrades {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  list-style: none;
+}
+
+.upgrades li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.upgrade-price {
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.upgrades .quiet {
+  min-height: 44px;
+  padding: 6px 16px;
+}
+
 /* ----------------------------------------------------------- progress */
 
 dialog {

@@ -6,16 +6,23 @@ import { newLearner } from '../engine/learner.js';
 
 const KEY = 'foothold.v1';
 
+/** A brand-new save: the learner model plus the story and shop state. */
+export function freshSave() {
+  return { ...newLearner(), intro: false, shop: [], toldAllLearned: false };
+}
+
 export function loadLearner() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved && saved.version === 1 && typeof saved.skills === 'object') {
-      return { ...newLearner(), ...saved };
+      const save = { ...freshSave(), ...saved };
+      if (!Array.isArray(save.shop)) save.shop = [];
+      return save;
     }
   } catch {
     // Fall through to a fresh start.
   }
-  return newLearner();
+  return freshSave();
 }
 
 export function saveLearner(learner) {

@@ -10,16 +10,15 @@ import {
   SUSPECTED,
   currentSkill,
   isMastered,
-  newLearner,
   nextProblem,
   recordResult,
 } from '../engine/learner.js';
 import { TILL, breakdown, formatMoney, total } from '../engine/money.js';
 import { PATTERNS, getPattern } from '../engine/patterns.js';
 import { createRng } from '../engine/rng.js';
-import { customerSvg, numberLineSvg, pieceSvg } from './art.js';
-import { pickItem, pickLook } from './goods.js';
-import { clearLearner, loadLearner, saveLearner } from './storage.js';
+import { customerSvg, numberLineSvg, pieceSvg, shopSvg } from './art.js';
+import { UPGRADES, pickItem, pickLook } from './goods.js';
+import { clearLearner, freshSave, loadLearner, saveLearner } from './storage.js';
 
 const CUSTOMERS_PER_DAY = 6;
 /** Coins earned by the number of wrong tries before the right one. */
@@ -39,6 +38,7 @@ let learner = loadLearner();
 let today = newDay();
 let round = null;
 let view = {};
+let summary = null;
 
 function newDay() {
   return { served: 0, firstTry: 0, earned: 0, learned: [] };
@@ -256,7 +256,7 @@ function renderFeedback() {
         round.learned && h('p', { class: 'learned' }, `You have learned: ${round.learned.name}.`),
         h(
           'button',
-          { class: 'primary', type: 'button', id: 'next', onclick: last ? showDayEnd : startRound },
+          { class: 'primary', type: 'button', id: 'next', onclick: last ? closeDay : startRound },
           last ? 'Close the shop' : 'Next customer',
         ),
       ),
@@ -283,7 +283,7 @@ function renderFeedback() {
     h(
       'div',
       { class: 'card check' },
-      h('h2', {}, 'Let’s check that.'),
+      h('h2', {}, 'Nell: “Let’s check that.”'),
       h('p', {}, `The price is ${formatMoney(problem.price)}. You handed back ${formatMoney(result.answer)}.`),
       h(
         'p',
@@ -308,36 +308,95 @@ function renderFeedback() {
   );
 }
 
-// --------------------------------------------------------------- day end
+// ----------------------------------------------------------------- story
 
-function showDayEnd() {
-  const finished = learner.day;
-  const day = today;
-  learner.day += 1;
-  saveLearner(learner);
-  today = newDay();
+function showIntro() {
   round = null;
-
-  const working = currentSkill(learner);
-  const record = working && learner.skills[working.id];
   const start = h(
     'button',
-    { class: 'primary', type: 'button', onclick: startRound },
-    `Open the shop for day ${learner.day}`,
+    {
+      class: 'primary',
+      type: 'button',
+      onclick: () => {
+        learner.intro = true;
+        saveLearner(learner);
+        startRound();
+      },
+    },
+    'Open the shop',
   );
   app.replaceChildren(
     h(
       'section',
+      { class: 'card story' },
+      h('h2', {}, 'Nell’s Corner Shop'),
+      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+      h('p', {}, 'Nell has run this corner shop for forty years.'),
+      h('p', {}, 'These days the small numbers on the coins are hard for her to read, and the shop is looking worn.'),
+      h('p', {}, 'She has hired you to work the counter. Give every customer the right change.'),
+      h('p', {}, 'You earn coins for your work. Spend them to fix up the shop.'),
+      start,
+    ),
+  );
+  whereEl.textContent = `Day ${learner.day}`;
+  purseEl.textContent = `${learner.coins} coins`;
+}
+
+function nellLine(day, firstTimeAllLearned) {
+  if (firstTimeAllLearned) {
+    return 'You can run the counter on your own now. I have been thinking about opening the old kitchen again.';
+  }
+  if (day.learned.length > 0) return 'You are learning fast. I can see it.';
+  if (day.firstTry === CUSTOMERS_PER_DAY) {
+    return 'Every customer got the right change, first time. The till adds up to the penny.';
+  }
+  if (day.firstTry >= CUSTOMERS_PER_DAY - 2) {
+    return 'A good day. We checked the tricky ones together, and the till adds up.';
+  }
+  return 'Some hard ones today. Checking them is how you get better. And the till adds up.';
+}
+
+// --------------------------------------------------------------- day end
+
+function closeDay() {
+  const firstTimeAllLearned = !currentSkill(learner) && !learner.toldAllLearned;
+  summary = { number: learner.day, ...today, line: nellLine(today, firstTimeAllLearned) };
+  if (firstTimeAllLearned) learner.toldAllLearned = true;
+  learner.day += 1;
+  saveLearner(learner);
+  today = newDay();
+  round = null;
+  renderDayEnd();
+  document.getElementById('open-shop').focus();
+}
+
+function buy(upgrade) {
+  if (learner.coins < upgrade.price || learner.shop.includes(upgrade.id)) return;
+  learner.coins -= upgrade.price;
+  learner.shop.push(upgrade.id);
+  saveLearner(learner);
+  renderDayEnd();
+  (app.querySelector('.upgrades button:not(:disabled)') ?? document.getElementById('open-shop')).focus();
+}
+
+function renderDayEnd() {
+  const working = currentSkill(learner);
+  const record = working && learner.skills[working.id];
+  const forSale = UPGRADES.filter((u) => !learner.shop.includes(u.id));
+  app.replaceChildren(
+    h(
+      'section',
       { class: 'card day-end' },
-      h('h2', {}, `Day ${finished} is done`),
+      h('h2', {}, `Day ${summary.number} is done`),
+      h('p', { class: 'nell' }, h('strong', {}, 'Nell: '), `“${summary.line}”`),
       h(
         'ul',
         { class: 'stats' },
-        h('li', {}, h('strong', {}, String(day.served)), ' customers served'),
-        h('li', {}, h('strong', {}, String(day.firstTry)), ' right the first time'),
-        h('li', {}, h('strong', {}, String(day.earned)), ' coins earned'),
+        h('li', {}, h('strong', {}, String(summary.served)), ' customers served'),
+        h('li', {}, h('strong', {}, String(summary.firstTry)), ' right the first time'),
+        h('li', {}, h('strong', {}, String(summary.earned)), ' coins earned'),
       ),
-      day.learned.length > 0 && h('p', { class: 'learned' }, `Learned today: ${day.learned.join(', ')}.`),
+      summary.learned.length > 0 && h('p', { class: 'learned' }, `Learned today: ${summary.learned.join(', ')}.`),
       working
         ? h(
             'p',
@@ -346,12 +405,47 @@ function showDayEnd() {
             record?.streak ? ` (${record.streak} of ${MASTERY_STREAK} in a row).` : '.',
           )
         : h('p', {}, 'You have learned every skill at the counter.'),
-      start,
+    ),
+    h(
+      'section',
+      { class: 'card fix-up' },
+      h('h2', {}, 'Fix up the shop'),
+      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+      h('p', { role: 'status' }, 'You have ', h('strong', {}, `${learner.coins} coins`), ' to spend.'),
+      forSale.length === 0
+        ? h('p', {}, 'The shop has everything now. It has never looked better.')
+        : h(
+            'ul',
+            { class: 'upgrades' },
+            forSale.map((upgrade) =>
+              h(
+                'li',
+                {},
+                h('span', { class: 'upgrade-name' }, upgrade.name),
+                h('span', { class: 'upgrade-price' }, `${upgrade.price} coins`),
+                h(
+                  'button',
+                  {
+                    class: 'quiet',
+                    type: 'button',
+                    disabled: learner.coins < upgrade.price,
+                    'aria-label': `Buy ${upgrade.name.toLowerCase()} for ${upgrade.price} coins`,
+                    onclick: () => buy(upgrade),
+                  },
+                  'Buy',
+                ),
+              ),
+            ),
+          ),
+    ),
+    h(
+      'div',
+      { class: 'actions' },
+      h('button', { class: 'primary', type: 'button', id: 'open-shop', onclick: startRound }, `Open the shop for day ${learner.day}`),
     ),
   );
-  whereEl.textContent = `Day ${finished} · Shop closed`;
+  whereEl.textContent = `Day ${summary.number} · Shop closed`;
   purseEl.textContent = `${learner.coins} coins`;
-  start.focus();
 }
 
 // -------------------------------------------------------------- progress
@@ -419,15 +513,16 @@ function openProgress() {
 function resetProgress() {
   if (!confirm('Erase all progress and start again from day 1?')) return;
   clearLearner();
-  learner = newLearner();
+  learner = freshSave();
   today = newDay();
   progressDialog.close();
-  startRound();
+  showIntro();
 }
 
 document.getElementById('open-progress').addEventListener('click', openProgress);
 
-startRound();
+if (learner.intro) startRound();
+else showIntro();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {
