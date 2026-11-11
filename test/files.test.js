@@ -9,6 +9,7 @@ import { depotView } from '../src/game/depot-view.js';
 import { kitchenView } from '../src/game/kitchen-view.js';
 import { officeView } from '../src/game/office-view.js';
 import { migrate } from '../src/game/storage.js';
+import { workshopView } from '../src/game/workshop-view.js';
 
 function sourceFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
@@ -56,7 +57,7 @@ test('a damaged save is replaced, not trusted', () => {
 });
 
 test('every job has a ladder of titles from no skills to all of them', () => {
-  for (const view of [counterView, kitchenView, depotView, officeView]) {
+  for (const view of [counterView, kitchenView, depotView, officeView, workshopView]) {
     const steps = view.ranks.map((rank) => rank.at);
     assert.equal(steps[0], 0, view.title);
     assert.equal(steps.at(-1), view.job.skills.length, view.title);

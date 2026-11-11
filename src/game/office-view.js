@@ -12,11 +12,11 @@ const IDA = { skin: '#f6d3b3', hair: '#b5432e', shirt: '#2f7f6b' };
 
 // Things bought at a price each.
 const EACH = [
-  { title: 'Paint for the benches', unit: ['tin', 'tins'], line: (each) => `A tin of paint costs $${each}.` },
+  { title: 'Paint for the benches', unit: ['can', 'cans'], line: (each) => `A can of paint costs $${each}.` },
   { title: 'Flags for the parade', unit: ['flag', 'flags'], line: (each) => `A flag costs $${each}.` },
-  { title: 'Bulbs for the street lamps', unit: ['bulb', 'bulbs'], line: (each) => `A new bulb costs $${each}.` },
+  { title: 'Bulbs for the streetlights', unit: ['bulb', 'bulbs'], line: (each) => `A new bulb costs $${each}.` },
   { title: 'Hanging baskets', unit: ['basket', 'baskets'], line: (each) => `A hanging basket costs $${each}.` },
-  { title: 'Trophies for sports day', unit: ['trophy', 'trophies'], line: (each) => `A trophy costs $${each}.` },
+  { title: 'Trophies for field day', unit: ['trophy', 'trophies'], line: (each) => `A trophy costs $${each}.` },
 ];
 
 // Things bought at a price each, after a charge paid once.
@@ -39,7 +39,7 @@ const CHARGE = [
   {
     title: 'Tables for the market',
     unit: ['table', 'tables'],
-    line: (fee, each) => `The marquee costs $${fee} to put up, plus $${each} for each table.`,
+    line: (fee, each) => `The tent costs $${fee} to put up, plus $${each} for each table.`,
   },
 ];
 
@@ -171,10 +171,10 @@ export const officeView = {
   // Job titles, by the number of skills learned. Promotions are earned
   // only by learning; they cannot be bought and are never lost.
   ranks: [
-    { at: 0, title: 'Office Junior' },
+    { at: 0, title: 'Intern' },
     { at: 1, title: 'Clerk' },
     { at: 2, title: 'Planner' },
-    { at: 3, title: 'Budget Officer' },
+    { at: 3, title: 'Budget Analyst' },
     { at: 4, title: 'Town Treasurer' },
   ],
   title: 'The town office',

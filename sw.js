@@ -2,7 +2,7 @@
 // (so updates arrive straight away) and kept in a cache, which is used
 // whenever the network is not available.
 
-const CACHE = 'foothold-v10';
+const CACHE = 'foothold-v11';
 
 const FILES = [
   './',
@@ -29,6 +29,7 @@ const FILES = [
   './src/game/number-pad.js',
   './src/game/office-view.js',
   './src/game/storage.js',
+  './src/game/workshop-view.js',
   './src/kitchen/fractions.js',
   './src/kitchen/job.js',
   './src/kitchen/patterns.js',
@@ -36,6 +37,9 @@ const FILES = [
   './src/office/job.js',
   './src/office/patterns.js',
   './src/office/problems.js',
+  './src/workshop/job.js',
+  './src/workshop/patterns.js',
+  './src/workshop/problems.js',
 ];
 
 self.addEventListener('install', (event) => {

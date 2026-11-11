@@ -21,11 +21,11 @@ import { UPGRADES } from './goods.js';
 import { kitchenView } from './kitchen-view.js';
 import { officeView } from './office-view.js';
 import { clearLearner, freshSave, loadLearner, saveLearner } from './storage.js';
+import { workshopView } from './workshop-view.js';
 
-const VIEWS = [counterView, kitchenView, depotView, officeView];
-const COMING_LATER = [
-  { title: 'Workshop', subject: 'Geometry' },
-];
+const VIEWS = [counterView, kitchenView, depotView, officeView, workshopView];
+/** Places on the street that have no job yet. */
+const COMING_LATER = [];
 
 const TASKS_PER_DAY = 6;
 /** Coins earned by the number of wrong tries before the right one. */
@@ -101,9 +101,9 @@ function showIntro() {
       h('h2', {}, 'Welcome to Foothold'),
       h('div', { html: shopSvg(learner.shop, UPGRADES) }),
       h('p', {}, 'Foothold is a small town at the foot of the hills. Its main street has seen better days.'),
-      h('p', {}, 'Nell needs help in her shop and its kitchen. Sam needs help at the delivery depot, and Ida at the town office.'),
+      h('p', {}, 'Nell needs help in her store and its kitchen. So do Sam at the delivery depot, Ida at the town office, and Bea in the workshop.'),
       h('p', {}, 'Every job here is real work. Do it well and you earn coins.'),
-      h('p', {}, 'Spend your coins to fix up the street, starting with Nell’s shop.'),
+      h('p', {}, 'Spend your coins to fix up the street, starting with Nell’s store.'),
       start,
     ),
   );
@@ -131,7 +131,7 @@ function showStreet() {
       h(
         'button',
         { class: 'quiet', type: 'button', id: 'fix-up', onclick: showFixUp },
-        `Fix up the shop (you have ${learner.coins} coins)`,
+        `Fix up the store (you have ${learner.coins} coins)`,
       ),
     ),
     ...VIEWS.map((v) => {
@@ -160,12 +160,16 @@ function showStreet() {
         ),
       );
     }),
-    h(
-      'section',
-      { class: 'card later' },
-      h('h3', {}, 'Not open yet'),
-      h('ul', {}, COMING_LATER.map((place) => h('li', {}, `${place.title} (${place.subject})`))),
-    ),
+    ...(COMING_LATER.length > 0
+      ? [
+          h(
+            'section',
+            { class: 'card later' },
+            h('h3', {}, 'Not open yet'),
+            h('ul', {}, COMING_LATER.map((place) => h('li', {}, `${place.title} (${place.subject})`))),
+          ),
+        ]
+      : []),
   );
   setHeader('Main Street');
 }
@@ -453,11 +457,11 @@ function fixUpCard(redraw) {
   return h(
     'section',
     { class: 'card fix-up' },
-    h('h2', {}, 'Fix up the shop'),
+    h('h2', {}, 'Fix up the store'),
     h('div', { html: shopSvg(learner.shop, UPGRADES) }),
     h('p', { role: 'status' }, 'You have ', h('strong', {}, `${learner.coins} coins`), ' to spend.'),
     forSale.length === 0
-      ? h('p', {}, 'The shop has everything now. It has never looked better.')
+      ? h('p', {}, 'The store has everything now. It has never looked better.')
       : h(
           'ul',
           { class: 'upgrades' },
@@ -495,7 +499,7 @@ function showFixUp() {
       h('button', { class: 'primary', type: 'button', id: 'to-street', onclick: showStreet }, 'Back to Main Street'),
     ),
   );
-  setHeader('Nell’s shop');
+  setHeader('Nell’s store');
 }
 
 function renderDayEnd() {

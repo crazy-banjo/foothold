@@ -8,7 +8,7 @@ const SINGLE_PIECES = new Set(BIG_TILL.map((d) => d.cents));
 
 export const counterJob = {
   id: 'counter',
-  name: 'The shop counter',
+  name: 'The store counter',
   skills: SKILLS,
   patterns: PATTERNS,
   generate,

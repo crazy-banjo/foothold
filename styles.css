@@ -853,6 +853,72 @@ figcaption {
   fill: var(--accent-ink);
 }
 
+/* ----------------------------------------------------------- workshop */
+
+.shape {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+}
+
+.shape-body {
+  fill: var(--card);
+}
+
+.shape-body.filled {
+  fill: #e9b949;
+  fill-opacity: 0.45;
+}
+
+.shape-outline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.shape-outline.heavy {
+  stroke: var(--accent);
+  stroke-width: 5;
+}
+
+.shape-grid line {
+  stroke: var(--ink);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.shape-grid.faint line {
+  stroke-dasharray: 3 3;
+  opacity: 0.3;
+}
+
+.shape-ghost {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.6;
+}
+
+.shape-corner {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.shape-label {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shape-label.found {
+  fill: var(--accent);
+  font-weight: 700;
+}
+
 /* ----------------------------------------------------------- progress */
 
 dialog h4 {

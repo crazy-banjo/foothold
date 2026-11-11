@@ -89,8 +89,8 @@ export function shopSvg(owned, upgrades) {
   const trim = painted ? '#1f7a5c' : '#857c70';
   const names = upgrades.filter((u) => has(u.id)).map((u) => u.name.toLowerCase());
   const label = names.length
-    ? `Nell’s shop, now with: ${names.join(', ')}.`
-    : 'Nell’s shop. The paint is cracked and the sign is missing a letter.';
+    ? `Nell’s store, now with: ${names.join(', ')}.`
+    : 'Nell’s store. The paint is cracked and the sign is missing a letter.';
   const flowers = [0, 1, 2, 3, 4, 5, 6]
     .map((i) => `<circle cx="${69 + i * 15}" cy="149" r="5" fill="${i % 2 ? '#f2c14e' : '#e2607a'}"/>`)
     .join('');
@@ -104,9 +104,9 @@ export function shopSvg(owned, upgrades) {
     ${
       has('sign')
         ? `<rect x="76" y="52" width="168" height="26" rx="4" fill="#1f7a5c"/>
-           <text x="160" y="71" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1" fill="#fff">NELL’S SHOP</text>`
+           <text x="160" y="71" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1" fill="#fff">NELL’S STORE</text>`
         : `<g transform="rotate(-4 160 65)"><rect x="100" y="54" width="120" height="22" fill="#9b9285" stroke="#7a7266"/>
-           <text x="160" y="70" text-anchor="middle" font-size="13" letter-spacing="3" fill="#6f675c">SH P</text></g>`
+           <text x="160" y="70" text-anchor="middle" font-size="13" letter-spacing="3" fill="#6f675c">ST RE</text></g>`
     }
     <rect x="58" y="92" width="112" height="60" fill="${has('display') ? '#cfeaf5' : '#aab6b8'}" stroke="${trim}" stroke-width="3"/>
     ${

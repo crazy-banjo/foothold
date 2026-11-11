@@ -207,9 +207,9 @@ export const depotView = {
   // Job titles, by the number of skills learned. Promotions are earned
   // only by learning; they cannot be bought and are never lost.
   ranks: [
-    { at: 0, title: 'Yard Hand' },
+    { at: 0, title: 'Dock Helper' },
     { at: 1, title: 'Loader' },
-    { at: 3, title: 'Driver’s Mate' },
+    { at: 3, title: 'Driver’s Helper' },
     { at: 5, title: 'Dispatcher' },
     { at: 6, title: 'Depot Manager' },
   ],

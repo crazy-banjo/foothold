@@ -62,9 +62,9 @@ export const UPGRADES = [
   { id: 'sign', name: 'A new sign', price: 60 },
   { id: 'display', name: 'A window display', price: 70 },
   { id: 'awning', name: 'A striped awning', price: 80 },
-  { id: 'lamp', name: 'A street lamp', price: 60 },
+  { id: 'lamp', name: 'A streetlight', price: 60 },
   { id: 'bench', name: 'A bench outside', price: 90 },
-  { id: 'cat', name: 'A bed for the shop cat', price: 120 },
+  { id: 'cat', name: 'A bed for the store cat', price: 120 },
 ];
 
 const SKIN = ['#f6d3b3', '#e8b48a', '#c98d5e', '#9a6340', '#6f4428'];

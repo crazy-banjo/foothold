@@ -19,21 +19,21 @@ export const counterView = {
   // only by learning; they cannot be bought and are never lost.
   ranks: [
     { at: 0, title: 'Trainee' },
-    { at: 1, title: 'Counter Assistant' },
+    { at: 1, title: 'Clerk' },
     { at: 3, title: 'Cashier' },
     { at: 6, title: 'Head Cashier' },
-    { at: 8, title: 'Shop Manager' },
+    { at: 8, title: 'Store Manager' },
   ],
-  title: 'Nell’s shop counter',
+  title: 'Nell’s store counter',
   subject: 'Money',
   blurb: 'Hand each customer the right change.',
   taskWord: 'Customer',
   labels: {
     tray: 'Change you are handing back',
-    empty: 'Pick bills and coins from your till.',
+    empty: 'Pick bills and coins from your cash drawer.',
     undo: 'Tap a bill or coin here to take it back.',
     given: 'Handed over.',
-    pieces: 'Your till',
+    pieces: 'Your cash drawer',
     clear: 'Start over',
     submit: 'Hand over the change',
     next: 'Next customer',
@@ -115,11 +115,11 @@ export const counterView = {
 
   dayLine(day, tasks) {
     if (day.firstTry === tasks) {
-      return 'Every customer got the right change, first time. The till adds up to the penny.';
+      return 'Every customer got the right change, first time. The register adds up to the penny.';
     }
     if (day.firstTry >= tasks - 2) {
-      return 'A good day. We checked the tricky ones together, and the till adds up.';
+      return 'A good day. We checked the tricky ones together, and the register adds up.';
     }
-    return 'Some hard ones today. Checking them is how you get better. And the till adds up.';
+    return 'Some hard ones today. Checking them is how you get better. And the register adds up.';
   },
 };

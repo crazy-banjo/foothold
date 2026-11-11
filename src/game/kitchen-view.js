@@ -181,9 +181,9 @@ export const kitchenView = {
   ranks: [
     { at: 0, title: 'Kitchen Helper' },
     { at: 1, title: 'Prep Cook' },
-    { at: 3, title: 'Cook' },
-    { at: 5, title: 'Second Cook' },
-    { at: 6, title: 'Head Cook' },
+    { at: 3, title: 'Line Cook' },
+    { at: 5, title: 'Sous Chef' },
+    { at: 6, title: 'Head Chef' },
   ],
   title: 'Nell’s kitchen',
   subject: 'Fractions',

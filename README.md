@@ -14,24 +14,27 @@ Two things reward the work, and they are kept apart on purpose:
   No purchase makes the math easier, and no subject is locked behind saving
   up.
 - **Promotions** are earned only by learning. Each business has a ladder of
-  job titles, such as Trainee to Shop Manager at the counter. They cannot be
+  job titles, such as Trainee to Store Manager at the counter. They cannot be
   bought and are never lost. Your character's outfit follows your highest
   title, from a T-shirt to a suit and tie.
 
 | Job | Math | What you do |
 |---|---|---|
-| Nell's shop counter | Money, subtraction | Hand customers their change from the till, up to change from $100.00 |
+| Nell's store counter | Money, subtraction | Hand customers their change from the cash drawer, up to change from $100.00 |
 | Nell's kitchen | Fractions | Measure ingredients with whichever scoops are clean |
 | The delivery depot | Ratio and rate (pre-algebra) | Load boxes, book minutes, and plan how many deliveries fit |
 | The town office | Linear equations (algebra) | Fill in the one number that makes a plan add up |
+| The workshop | Perimeter and area (geometry) | Cut edging to go round a shape, and lay out tiles to cover it |
 
-![The shop counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
+![The store counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
 
 ![The kitchen after a wrong answer: the game compares what the recipe needs with what is in the bowl, using bars drawn to scale.](docs/kitchen.png)
 
 ![The depot after a wrong answer: the game says how many deliveries the booked time allows, and shows a table of deliveries against minutes.](docs/depot.png)
 
 ![The town office after a wrong answer: the game adds up what the order would cost, and shows how the budget is split between the charge and the rest.](docs/office.png)
+
+![The workshop after a wrong answer: the drawing is shown again with every edge marked, including the two that had no measurement.](docs/workshop.png)
 
 When an answer is wrong, Foothold does three things:
 
@@ -55,8 +58,8 @@ in the browser it is played in.
 
 ## Status
 
-Early. Four jobs exist, with four to eight skills each. Money is US currency
-and measures are US cups. It has not yet been tried with children, so the
+Early. Five jobs exist, with four to eight skills each. Money is US currency
+and measures are US cups and feet. It has not yet been tried with children, so the
 difficulty curve and the wording of the hints are untested guesses.
 
 ## Play it
@@ -140,6 +143,18 @@ is 10, from 6 + 2n = 26):
 | Leaves out the cost | when raising money: target ÷ price |
 | Stops at the money needed | when raising money: target + cost |
 
+In the workshop (a 4 by 3 rectangle, unless noted):
+
+| Pattern | Example |
+|---|---|
+| Gives the space inside for the distance round | 12 feet of edging |
+| Gives the distance round for the space inside | 14 tiles |
+| Adds just two sides | 4 + 3 = 7 |
+| Adds only the sides with a measurement | leaves out the two unmarked sides of an L shape |
+| Ignores the cut-away corner | tiles an L shape as a full rectangle |
+| Counts the overlap twice | splits an L shape into two overlapping rectangles |
+| Forgets to halve the triangle | 6 × 4 = 24 for a triangle that is 12 |
+
 The counter's column patterns follow the subtraction "bugs" catalogued by
 Brown and Burton (1978) and VanLehn (1990). Most of the kitchen's patterns
 come from treating the top and bottom of a fraction as two separate whole
@@ -179,10 +194,11 @@ src/engine/              shared by every job: no browser code
   diagnose.js            matching an answer to mistake patterns
   learner.js             mastery, evidence, choosing the next situation
   rng.js                 a seeded random number generator
-src/counter/             the shop counter: money, situations, patterns
+src/counter/             the store counter: money, situations, patterns
 src/kitchen/             the kitchen: fractions, situations, patterns
 src/depot/               the delivery depot: situations, patterns
 src/office/              the town office: plans, situations, patterns
+src/workshop/            the workshop: shapes, situations, patterns
 src/game/                the screens: Main Street, each job, the story
 test/                    tests for the engine and every job
 ```
@@ -197,11 +213,15 @@ Needs Node.js 20 or later. Nothing to install.
 
 ## Where this is going
 
-More buildings on Main Street, each with its own way of playing:
+Every subject on the first list now has a job. What is missing inside them:
 
-- **Town office, further on** (algebra): two offers that cost the same at
-  some point, which puts the unknown on both sides
-- **Workshop** (geometry): measure, cut, fit
+- **Kitchen:** adding two amounts in different sizes, which needs a way of
+  answering other than scoops.
+- **Town office:** two offers that cost the same at some point, which puts
+  the unknown on both sides.
+- **Workshop:** angles, and the space inside a box.
+- **The street:** each job screen drawn as the tool it uses, and repairs to
+  buy for every building, not only the store.
 
 ## Contributing
 
