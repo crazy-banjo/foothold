@@ -247,6 +247,24 @@ export const depotView = {
     return numberPad(round, api, { max: PLAN_MAX, ...formLine(round.problem) });
   },
 
+  /** The picture a teacher can ask to be shown before the first try. */
+  preview(round) {
+    const { rows, note } = table(round.problem, 1);
+    return h(
+      'figure',
+      {},
+      h('figcaption', {}, 'Sam’s table:'),
+      h(
+        'table',
+        { class: 'trip-table' },
+        rows.map(([heading, ...cells]) =>
+          h('tr', {}, h('th', { scope: 'row' }, heading), cells.map((cell) => h('td', {}, String(cell)))),
+        ),
+      ),
+      note && h('p', { class: 'mark-note' }, note),
+    );
+  },
+
   check(round) {
     const { problem, result, hint } = round;
     const tries = round.wrong.length;

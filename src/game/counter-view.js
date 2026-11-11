@@ -81,6 +81,17 @@ export const counterView = {
     return h('p', { class: 'sum' }, 'Total: ', h('strong', {}, formatMoney(sum)));
   },
 
+  /** The picture a teacher can ask to be shown before the first try. */
+  preview(round) {
+    const { price, paid } = round.problem;
+    return h(
+      'figure',
+      {},
+      h('figcaption', {}, 'Count up from the price to what they paid:'),
+      h('div', { html: numberLineSvg(countUp(price, paid), false) }),
+    );
+  },
+
   /** The body of the "Let's check that" card. */
   check(round) {
     const { problem, result, hint } = round;

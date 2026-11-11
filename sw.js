@@ -2,7 +2,7 @@
 // (so updates arrive straight away) and kept in a cache, which is used
 // whenever the network is not available.
 
-const CACHE = 'foothold-v11';
+const CACHE = 'foothold-v12';
 
 const FILES = [
   './',

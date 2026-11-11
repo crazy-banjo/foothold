@@ -62,6 +62,35 @@ Early. Five jobs exist, with four to eight skills each. Money is US currency
 and measures are US cups and feet. It has not yet been tried with children, so the
 difficulty curve and the wording of the hints are untested guesses.
 
+## For teachers
+
+Foothold is a practice tool, not a tutor. It notices how an answer went
+wrong and points at it, but the teaching is yours. Two ways it is meant to
+be used:
+
+- **Something to do.** "Earn 60 coins in the kitchen before the bell."
+- **Something to work through.** One kind of problem, with the helping
+  picture shown from the start, for a student who does better with visuals.
+
+On Main Street, **Set a task** builds either one. Choose the job, the kind
+of work (or leave it to the game), a coin goal, and whether the picture
+shows before the first try. The page shows a live example of what the
+student will get. You then hand out a link.
+
+The task is written into the link itself:
+
+```
+?task=kitchen&coins=60&skill=top-up-mixed&pictures=1
+```
+
+so nothing is stored or sent anywhere, and no one needs an account. When
+the goal is reached, the student gets a screen to show you: coins earned,
+jobs done, how many were right the first time, and which mistake patterns
+came up. Progress on a task survives a reload.
+
+Coins fall with each retry (10, then 6, 3 and 1), so a coin goal rewards
+getting it right, not clicking fast.
+
 ## Play it
 
 Play in the browser at <https://crazy-banjo.github.io/foothold/>.

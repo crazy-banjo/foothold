@@ -229,6 +229,16 @@ export const kitchenView = {
     return h('div', { class: 'bowl-holder', html: bowlSvg(already, sum) });
   },
 
+  /** The picture a teacher can ask to be shown before the first try. */
+  preview(round) {
+    return h(
+      'figure',
+      {},
+      h('figcaption', {}, 'What the recipe needs, and what is in the bowl to start with:'),
+      h('div', { html: barsSvg(comparison(round.problem, []), null) }),
+    );
+  },
+
   check(round) {
     const { problem, result, hint } = round;
     const tries = round.wrong.length;

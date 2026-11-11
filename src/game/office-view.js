@@ -217,6 +217,16 @@ export const officeView = {
     });
   },
 
+  /** The picture a teacher can ask to be shown before the first try. */
+  preview(round) {
+    return h(
+      'figure',
+      {},
+      h('figcaption', {}, 'How the money is split:'),
+      h('div', { html: stripsSvg(strips(round.problem, round.extra.plan, 1)) }),
+    );
+  },
+
   check(round) {
     const { problem, result, hint } = round;
     const { plan } = round.extra;

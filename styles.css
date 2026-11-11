@@ -528,6 +528,99 @@ figcaption {
   padding: 6px 16px;
 }
 
+/* -------------------------------------------------------------- tasks */
+
+.task-card {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.task-goal {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.task-done h3 {
+  margin-top: 6px;
+  font-size: 1rem;
+}
+
+.for-teachers {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.for-teachers h3 {
+  font-size: 1rem;
+}
+
+.task-builder {
+  display: grid;
+  gap: 14px;
+}
+
+.task-builder h3 {
+  margin-top: 6px;
+  font-size: 1rem;
+}
+
+.example {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+}
+
+.task-builder > .quiet {
+  justify-self: start;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.field select,
+.field input[type='number'],
+.field input[type='text'] {
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.field .about {
+  font-weight: 400;
+}
+
+.check-field {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-field input {
+  width: 22px;
+  height: 22px;
+}
+
+.preview {
+  display: grid;
+  gap: 6px;
+}
+
 /* -------------------------------------------------------- main street */
 
 .street {
