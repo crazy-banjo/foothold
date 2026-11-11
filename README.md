@@ -6,12 +6,21 @@ treated as information about *how* the player is thinking.
 Foothold is a small town whose main street has seen better days. You take
 jobs there. Each job is real work that needs the math of its level, and no
 job ever poses a question like "what is $5.00 − $2.40?" or "what is
-3/4 − 1/2?". The coins you earn are wages, and you spend them fixing up the
-street.
+3/4 − 1/2?".
+
+Two things reward the work, and they are kept apart on purpose:
+
+- **Coins** are wages. They buy decoration for the street and nothing else.
+  No purchase makes the math easier, and no subject is locked behind saving
+  up.
+- **Promotions** are earned only by learning. Each business has a ladder of
+  job titles, such as Trainee to Shop Manager at the counter. They cannot be
+  bought and are never lost. Your character's outfit follows your highest
+  title, from a T-shirt to a suit and tie.
 
 | Job | Math | What you do |
 |---|---|---|
-| Nell's shop counter | Money, subtraction | Hand customers their change from the till |
+| Nell's shop counter | Money, subtraction | Hand customers their change from the till, up to change from $100.00 |
 | Nell's kitchen | Fractions | Measure ingredients with whichever scoops are clean |
 | The delivery depot | Ratio and rate (pre-algebra) | Pump just enough fuel for the van's trip |
 
@@ -42,7 +51,7 @@ in the browser it is played in.
 
 ## Status
 
-Early. Three jobs exist, with five or six skills each. Money is US currency
+Early. Three jobs exist, with five to eight skills each. Money is US currency
 and measures are US cups, gallons and miles. It has not yet been tried with children, so the
 difficulty curve and the wording of the hints are untested guesses.
 

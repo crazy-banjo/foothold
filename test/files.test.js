@@ -4,6 +4,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 
+import { counterView } from '../src/game/counter-view.js';
+import { depotView } from '../src/game/depot-view.js';
+import { kitchenView } from '../src/game/kitchen-view.js';
 import { migrate } from '../src/game/storage.js';
 
 function sourceFiles(dir) {
@@ -49,4 +52,14 @@ test('a damaged save is replaced, not trusted', () => {
   assert.equal(migrate('nonsense'), null);
   assert.equal(migrate({ version: 9 }), null);
   assert.equal(migrate({ version: 2, jobs: null }), null);
+});
+
+test('every job has a ladder of titles from no skills to all of them', () => {
+  for (const view of [counterView, kitchenView, depotView]) {
+    const steps = view.ranks.map((rank) => rank.at);
+    assert.equal(steps[0], 0, view.title);
+    assert.equal(steps.at(-1), view.job.skills.length, view.title);
+    assert.deepEqual(steps, [...new Set(steps)].sort((a, b) => a - b), view.title);
+    assert.equal(new Set(view.ranks.map((rank) => rank.title)).size, view.ranks.length, view.title);
+  }
 });

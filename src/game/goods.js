@@ -28,7 +28,7 @@ const GOODS = [
     ],
   },
   {
-    upTo: Infinity,
+    upTo: 2499,
     items: [
       { icon: '🎂', name: 'Cake', ask: 'A cake' },
       { icon: '🧩', name: 'Puzzle', ask: 'A puzzle' },
@@ -36,6 +36,17 @@ const GOODS = [
       { icon: '🧸', name: 'Teddy bear', ask: 'A teddy bear' },
       { icon: '⚽', name: 'Ball', ask: 'A ball' },
       { icon: '🪁', name: 'Kite', ask: 'A kite' },
+    ],
+  },
+  {
+    upTo: Infinity,
+    items: [
+      { icon: '🧥', name: 'Coat', ask: 'A winter coat' },
+      { icon: '📻', name: 'Radio', ask: 'A radio' },
+      { icon: '🧰', name: 'Toolbox', ask: 'A toolbox' },
+      { icon: '🎒', name: 'Backpack', ask: 'A backpack' },
+      { icon: '🛹', name: 'Skateboard', ask: 'A skateboard' },
+      { icon: '🥾', name: 'Boots', ask: 'A pair of boots' },
     ],
   },
 ];

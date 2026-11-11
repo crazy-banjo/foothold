@@ -13,7 +13,7 @@ import {
   recordResult,
 } from '../engine/learner.js';
 import { createRng } from '../engine/rng.js';
-import { shopSvg } from './art.js';
+import { playerSvg, shopSvg } from './art.js';
 import { counterView } from './counter-view.js';
 import { depotView } from './depot-view.js';
 import { h, rich } from './dom.js';
@@ -51,6 +51,21 @@ let summary = null;
 function setHeader(where) {
   whereEl.textContent = `Day ${learner.day} · ${where}`;
   purseEl.textContent = `${learner.coins} coins`;
+}
+
+/** The player's job title at a business, and what the next one takes. */
+function rankOf(v) {
+  const learned = v.job.skills.filter((s) => isMastered(learner, v.job, s.id)).length;
+  let index = 0;
+  v.ranks.forEach((rank, i) => {
+    if (learned >= rank.at) index = i;
+  });
+  const next = v.ranks[index + 1];
+  return {
+    index,
+    title: v.ranks[index].title,
+    next: next ? { title: next.title, need: next.at - learned } : null,
+  };
 }
 
 const trayTotal = () => round.tray.reduce((sum, piece) => sum + piece.value, 0);
@@ -98,17 +113,34 @@ function showStreet() {
     h(
       'section',
       { class: 'card street' },
-      h('h2', {}, 'Main Street'),
+      h(
+        'div',
+        { class: 'you' },
+        // The outfit follows the highest job title reached anywhere.
+        h('div', { html: playerSvg(Math.max(...VIEWS.map((v) => rankOf(v).index))) }),
+        h('div', {}, h('h2', {}, 'Main Street'), h('p', {}, 'Where will you work today?')),
+      ),
       h('div', { html: shopSvg(learner.shop, UPGRADES) }),
-      h('p', {}, 'Where will you work today?'),
     ),
     ...VIEWS.map((v) => {
-      const learned = v.job.skills.filter((s) => isMastered(learner, v.job, s.id)).length;
+      const rank = rankOf(v);
       return h(
         'section',
         { class: 'card job' },
         h('div', {}, h('h3', {}, v.title), h('p', { class: 'about' }, `${v.subject}. ${v.blurb}`)),
-        h('p', { class: 'status' }, `${learned} of ${v.job.skills.length} skills learned`),
+        h(
+          'p',
+          { class: 'rank' },
+          'Your job: ',
+          h('span', { class: 'badge' }, rank.title),
+          h(
+            'span',
+            { class: 'about' },
+            rank.next
+              ? `Next: ${rank.next.title}, after ${rank.next.need} more ${rank.next.need === 1 ? 'skill' : 'skills'}.`
+              : 'The top job here.',
+          ),
+        ),
         h(
           'button',
           { class: 'primary', type: 'button', 'aria-label': `Work at ${v.title} today`, onclick: () => startDay(v) },
@@ -130,7 +162,7 @@ function showStreet() {
 
 function startDay(chosen) {
   view = chosen;
-  today = { served: 0, firstTry: 0, earned: 0, learned: [] };
+  today = { served: 0, firstTry: 0, earned: 0, learned: [], promoted: null };
   startRound();
 }
 
@@ -148,6 +180,7 @@ function startRound() {
     done: false,
     pay: 0,
     learned: null,
+    promoted: null,
   };
   parts = {
     scene: h('section', { class: 'scene card' }),
@@ -291,6 +324,7 @@ function handOver() {
   const result = diagnose(job, round.problem, answer);
   if (result.correct) {
     const wasMastered = isMastered(learner, job, round.problem.skill);
+    const titleBefore = rankOf(view).title;
     recordResult(learner, job, round.problem, round.wrong);
     round.done = true;
     round.pay = PAY[Math.min(round.wrong.length, PAY.length - 1)];
@@ -301,6 +335,11 @@ function handOver() {
     if (!wasMastered && isMastered(learner, job, round.problem.skill)) {
       round.learned = job.skills.find((s) => s.id === round.problem.skill);
       today.learned.push(round.learned.name);
+    }
+    const titleNow = rankOf(view).title;
+    if (titleNow !== titleBefore) {
+      round.promoted = titleNow;
+      today.promoted = titleNow;
     }
     saveLearner(learner);
     renderAll();
@@ -329,6 +368,7 @@ function renderFeedback() {
         h('h2', {}, round.wrong.length === 0 ? 'Right the first time!' : 'That’s it!'),
         h('p', {}, `You earned ${round.pay} ${round.pay === 1 ? 'coin' : 'coins'}.`),
         round.learned && h('p', { class: 'learned' }, `You have learned: ${round.learned.name}.`),
+        round.promoted && h('p', { class: 'promoted' }, `Promoted to ${round.promoted}!`),
         h(
           'button',
           { class: 'primary', type: 'button', id: 'next', onclick: last ? closeDay : startRound },
@@ -396,6 +436,7 @@ function renderDayEnd() {
       { class: 'card day-end' },
       h('h2', {}, `Day ${summary.number} is done`),
       h('p', { class: 'nell' }, h('strong', {}, `${summary.view.boss}: `), `“${summary.line}”`),
+      summary.promoted && h('p', { class: 'promoted' }, `Promoted to ${summary.promoted}!`),
       h(
         'ul',
         { class: 'stats' },
@@ -479,6 +520,7 @@ function openProgress() {
       const noticed = v.job.patterns.filter((p) => seen[p.id]?.seen > 0);
       return [
         h('h3', {}, `${v.title}: ${v.subject.toLowerCase()}`),
+        h('p', { class: 'rank' }, 'Job title: ', h('span', { class: 'badge' }, rankOf(v).title)),
         h(
           'ol',
           { class: 'skills' },

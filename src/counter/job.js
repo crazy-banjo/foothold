@@ -1,10 +1,10 @@
 // The shop counter as a job: making change. Amounts are in cents.
 
 import { SKILLS, generate } from './change.js';
-import { TILL } from './money.js';
+import { BIG_TILL } from './money.js';
 import { PATTERNS } from './patterns.js';
 
-const SINGLE_PIECES = new Set(TILL.map((d) => d.cents));
+const SINGLE_PIECES = new Set(BIG_TILL.map((d) => d.cents));
 
 export const counterJob = {
   id: 'counter',

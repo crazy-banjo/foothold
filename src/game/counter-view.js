@@ -3,16 +3,27 @@
 
 import { countUp } from '../counter/countup.js';
 import { counterJob } from '../counter/job.js';
-import { TILL, breakdown, formatMoney } from '../counter/money.js';
+import { BIG_TILL, TILL, breakdown, formatMoney } from '../counter/money.js';
 import { customerSvg, numberLineSvg, pieceSvg } from './art.js';
 import { h } from './dom.js';
 import { pickItem, pickLook } from './goods.js';
 
 const PIECES = TILL.map((d) => ({ ...d, value: d.cents }));
+// Twenties and fifties join the till once customers pay with big bills.
+const BIG_PIECES = BIG_TILL.map((d) => ({ ...d, value: d.cents }));
 
 export const counterView = {
   job: counterJob,
   boss: 'Nell',
+  // Job titles, by the number of skills learned. Promotions are earned
+  // only by learning; they cannot be bought and are never lost.
+  ranks: [
+    { at: 0, title: 'Trainee' },
+    { at: 1, title: 'Counter Assistant' },
+    { at: 3, title: 'Cashier' },
+    { at: 6, title: 'Head Cashier' },
+    { at: 8, title: 'Shop Manager' },
+  ],
   title: 'Nell’s shop counter',
   subject: 'Money',
   blurb: 'Hand each customer the right change.',
@@ -63,7 +74,7 @@ export const counterView = {
     ];
   },
 
-  pieces: () => PIECES,
+  pieces: (round) => (round.problem.paid >= 5000 ? BIG_PIECES : PIECES),
   pieceSvg,
 
   trayExtra(round, sum) {

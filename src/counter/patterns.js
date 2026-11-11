@@ -9,14 +9,16 @@
 
 import { formatMoney } from './money.js';
 
-// Amounts as four columns: [tens of dollars, dollars, dimes, pennies].
+// Amounts as five columns:
+// [hundreds of dollars, tens of dollars, dollars, dimes, pennies].
 const toColumns = (cents) => [
+  Math.floor(cents / 10000) % 10,
   Math.floor(cents / 1000) % 10,
   Math.floor(cents / 100) % 10,
   Math.floor(cents / 10) % 10,
   cents % 10,
 ];
-const fromColumns = (c) => c[0] * 1000 + c[1] * 100 + c[2] * 10 + c[3];
+const fromColumns = (c) => c.reduce((sum, digit) => sum * 10 + digit, 0);
 
 const dollars = (cents) => Math.floor(cents / 100);
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -38,9 +40,9 @@ function regroupWithoutReducing({ price, paid }) {
 function zeroStaysTen({ price, paid }) {
   const t = toColumns(paid);
   const p = toColumns(price);
-  const out = [0, 0, 0, 0];
+  const out = [0, 0, 0, 0, 0];
   let borrow = 0;
-  for (let i = 3; i >= 0; i--) {
+  for (let i = 4; i >= 0; i--) {
     let digit;
     if (borrow && t[i] === 0) {
       // A zero that was regrouped through should be worth 9. Here it is

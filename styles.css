@@ -500,6 +500,16 @@ figcaption {
   gap: 12px;
 }
 
+.you {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.player {
+  display: block;
+}
+
 .job {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -512,9 +522,30 @@ figcaption {
   font-size: 1.1rem;
 }
 
-.job .status {
+.job .rank {
   grid-column: 1;
-  margin: 0;
+}
+
+.rank .about {
+  margin-top: 2px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 10px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.promoted {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 
 .job .primary {

@@ -69,6 +69,15 @@ function tableColumns(problem, tries) {
 export const depotView = {
   job: depotJob,
   boss: 'Sam',
+  // Job titles, by the number of skills learned. Promotions are earned
+  // only by learning; they cannot be bought and are never lost.
+  ranks: [
+    { at: 0, title: 'Yard Hand' },
+    { at: 1, title: 'Fuel Hand' },
+    { at: 2, title: 'Driver’s Mate' },
+    { at: 4, title: 'Dispatcher' },
+    { at: 5, title: 'Depot Manager' },
+  ],
   title: 'The delivery depot',
   subject: 'Pre-algebra',
   blurb: 'Pump just enough fuel for each trip.',

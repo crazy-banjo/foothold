@@ -176,6 +176,15 @@ function markSize(problem) {
 export const kitchenView = {
   job: kitchenJob,
   boss: 'Nell',
+  // Job titles, by the number of skills learned. Promotions are earned
+  // only by learning; they cannot be bought and are never lost.
+  ranks: [
+    { at: 0, title: 'Kitchen Helper' },
+    { at: 1, title: 'Prep Cook' },
+    { at: 3, title: 'Cook' },
+    { at: 5, title: 'Second Cook' },
+    { at: 6, title: 'Head Cook' },
+  ],
   title: 'Nell’s kitchen',
   subject: 'Fractions',
   blurb: 'Measure what each recipe needs.',

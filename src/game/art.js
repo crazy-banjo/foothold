@@ -47,6 +47,40 @@ export function customerSvg(look, mood) {
   </svg>`;
 }
 
+const OUTFITS = ['a T-shirt', 'an apron', 'a collared shirt', 'a shirt and tie', 'a suit and tie'];
+
+/**
+ * The player's own character. The outfit follows the highest job title
+ * reached anywhere on Main Street: 0 is a new hire, 4 is the top job.
+ */
+export function playerSvg(level) {
+  const body = level >= 4 ? '#2f3a56' : level >= 2 ? '#e4eaf3' : '#4f8f3a';
+  const apron =
+    level === 1
+      ? `<path d="M27 63h26v21H27z" fill="#f4ead2" stroke="#b9a77e" stroke-width="1.5"/>
+         <path d="M28 63l5-6M52 63l-5-6" fill="none" stroke="#b9a77e" stroke-width="2"/>`
+      : '';
+  const jacket =
+    level >= 4
+      ? `<path d="M30 58l10 22 10-22z" fill="#ffffff"/>
+         <path d="M30 58l10 22M50 58l-10 22" fill="none" stroke="#1c2338" stroke-width="2"/>`
+      : '';
+  const collar =
+    level >= 2
+      ? '<path d="M32 57l8 8-10 3zM48 57l-8 8 10 3z" fill="#ffffff" stroke="#aab4c4" stroke-width="1"/>'
+      : '';
+  const tie = level >= 3 ? '<path d="M38 64h4l2.5 12-4.5 5-4.5-5z" fill="#c2553f"/>' : '';
+  return `<svg class="player" viewBox="0 0 80 84" width="96" height="100" role="img" aria-label="You, wearing ${OUTFITS[level]}.">
+    <path d="M8 84c0-18 14-26 32-26s32 8 32 26z" fill="${body}"/>
+    ${apron}${jacket}${collar}${tie}
+    <circle cx="40" cy="36" r="21" fill="#c98d5e"/>
+    <path d="M19 33a21 21 0 0 1 42 0c-5-9-13-11-21-11s-16 2-21 11z" fill="#3b2618"/>
+    <circle cx="33" cy="35" r="2.4" fill="#2b2622"/>
+    <circle cx="47" cy="35" r="2.4" fill="#2b2622"/>
+    <path d="M31 40q9 9 18 0" fill="none" stroke="#2b2622" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>`;
+}
+
 /** The shop front. It starts out worn and improves with each upgrade. */
 export function shopSvg(owned, upgrades) {
   const has = (id) => owned.includes(id);

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { SKILLS, generate } from '../src/counter/change.js';
 import { countUp } from '../src/counter/countup.js';
 import { counterJob as job } from '../src/counter/job.js';
-import { TILL, breakdown, formatMoney, total } from '../src/counter/money.js';
+import { BIG_TILL, TILL, breakdown, formatMoney, total } from '../src/counter/money.js';
 import { PATTERNS } from '../src/counter/patterns.js';
 import { diagnose, predict } from '../src/engine/diagnose.js';
 import {
@@ -42,6 +42,7 @@ test('formatMoney', () => {
 test('breakdown uses the fewest pieces and adds up', () => {
   assert.deepEqual(breakdown(515).map((p) => p.id), ['five', 'dime', 'nickel']);
   assert.deepEqual(breakdown(2000).map((p) => p.id), ['twenty']);
+  assert.deepEqual(breakdown(10000).map((p) => p.id), ['hundred']);
   for (let cents = 1; cents < 2100; cents += 7) assert.equal(total(breakdown(cents)), cents);
 });
 
@@ -49,7 +50,7 @@ test('every generated situation has a price below what was paid', () => {
   for (const problem of samples()) {
     assert.ok(problem.price > 0, JSON.stringify(problem));
     assert.ok(problem.price < problem.paid, JSON.stringify(problem));
-    assert.ok(problem.paid <= 2099, JSON.stringify(problem));
+    assert.ok(problem.paid <= 10000, JSON.stringify(problem));
   }
 });
 
@@ -81,6 +82,16 @@ test('each skill generates the kind of situation it describes', () => {
     assert.notEqual(p.paid % 100, 0);
     // The extra coins make the change rounder than the price.
     assert.ok(p.paid % 100 <= p.price % 100);
+
+    p = generate('big-bills', rng);
+    assert.ok(p.paid === 5000 || p.paid === 10000);
+    assert.ok(p.price > 1100);
+    assert.equal(p.price % 10, 0);
+    assert.notEqual(p.price % 100, 0);
+
+    p = generate('big-bills-any', rng);
+    assert.ok(p.paid === 5000 || p.paid === 10000);
+    assert.notEqual(p.price % 10, 0);
   }
 });
 
@@ -108,6 +119,15 @@ test('patterns predict the documented wrong answers', () => {
 
   // $2.37 paid with $10.00; the right change is $7.63.
   assert.equal(predicted('zero-stays-ten', 237, 1000), 873);
+
+  // $63.47 paid with $100.00; the right change is $36.53.
+  assert.equal(job.expected({ price: 6347, paid: 10000 }), 3653);
+  assert.equal(predicted('regroup-without-reducing', 6347, 10000), 14763);
+  assert.equal(predicted('smaller-from-larger', 6347, 10000), 16347);
+  assert.equal(predicted('zero-stays-ten', 6347, 10000), 4763);
+  assert.equal(predicted('ignores-price-cents', 6347, 10000), 3700);
+  assert.equal(predicted('stops-at-dollars', 6347, 10000), 3600);
+  assert.equal(predicted('stops-at-next-dollar', 6347, 10000), 53);
 });
 
 test('patterns never apply when no regrouping is needed', () => {
@@ -171,9 +191,13 @@ test('counting up always lands on the right change', () => {
     [5, 30, 100, 15],
   );
   assert.deepEqual(countUp(300, 500), [{ from: 300, to: 500, add: 200 }]);
+  assert.deepEqual(
+    countUp(6347, 10000).map((s) => s.add),
+    [3, 50, 600, 3000],
+  );
   for (const problem of samples()) {
     const steps = countUp(problem.price, problem.paid);
-    assert.ok(steps.length >= 1 && steps.length <= 4);
+    assert.ok(steps.length >= 1 && steps.length <= 5);
     assert.equal(steps[0].from, problem.price);
     assert.equal(steps.at(-1).to, problem.paid);
     assert.equal(
@@ -186,7 +210,11 @@ test('counting up always lands on the right change', () => {
 
 test('every right answer can be made from the till', () => {
   assert.equal(Math.min(...TILL.map((d) => d.cents)), 1);
-  assert.ok(TILL.every((d) => d.id !== 'twenty'));
+  assert.ok(TILL.every((d) => d.cents <= 1000));
+  assert.deepEqual(
+    BIG_TILL.slice(0, 2).map((d) => d.id),
+    ['fifty', 'twenty'],
+  );
 });
 
 test('a skill is mastered after enough first-try successes in a row', () => {
@@ -241,7 +269,7 @@ test('nextProblem works through every skill and never repeats back to back', () 
   const rng = createRng(11);
   const seen = new Set();
   let previous = null;
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < 500; i++) {
     const problem = nextProblem(learner, job, rng);
     assert.ok(problem.price < problem.paid);
     const key = job.key(problem);

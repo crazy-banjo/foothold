@@ -32,10 +32,21 @@ export const SKILLS = [
     name: 'Customer adds coins',
     about: 'The customer adds coins to the bill, such as $3.65 out of $5.15.',
   },
+  {
+    id: 'big-bills',
+    name: 'Fifties and hundreds',
+    about: 'A larger price paid with a big bill, such as $37.40 out of $50.00.',
+  },
+  {
+    id: 'big-bills-any',
+    name: 'Any price, big bills',
+    about: 'Any larger price paid with a big bill, such as $63.47 out of $100.00.',
+  },
 ];
 
 // Fives and tens come up more often than twenties.
 const BILLS = [500, 500, 1000, 1000, 2000];
+const BIG_BILLS = [5000, 10000];
 
 const GENERATORS = {
   'whole-dollars': (rng) => {
@@ -70,6 +81,19 @@ const GENERATORS = {
       const options = [...new Set([cents % 25, cents % 10, cents % 5])].filter((e) => e > 0);
       if (options.length > 0) return { price, paid: bill + rng.pick(options) };
     }
+  },
+
+  'big-bills': (rng) => {
+    const paid = rng.pick(BIG_BILLS);
+    return { price: rng.int(11, paid / 100 - 1) * 100 + rng.int(1, 9) * 10, paid };
+  },
+
+  'big-bills-any': (rng) => {
+    const paid = rng.pick(BIG_BILLS);
+    return {
+      price: rng.int(11, paid / 100 - 1) * 100 + rng.int(0, 9) * 10 + rng.int(1, 9),
+      paid,
+    };
   },
 };
 
