@@ -574,6 +574,15 @@ function resetProgress() {
 
 document.getElementById('open-progress').addEventListener('click', openProgress);
 
+// The title is the way home: back to Main Street from anywhere. Everything
+// earned so far is already saved; only the rest of today's jobs is dropped.
+document.getElementById('home').addEventListener('click', (event) => {
+  event.preventDefault();
+  if (learner.intro) showStreet();
+  else showIntro();
+  window.scrollTo(0, 0);
+});
+
 if (learner.intro) showStreet();
 else showIntro();
 

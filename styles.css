@@ -89,6 +89,17 @@ button:disabled {
   letter-spacing: 0.01em;
 }
 
+.brand a {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.brand a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .where {
   flex: 1;
   color: var(--soft);
