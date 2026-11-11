@@ -167,7 +167,8 @@ right answer for a situation, and its mistake patterns. Every answer is a
 whole number of some small unit, such as cents or twenty-fourths of a cup.
 The learner model, the diagnosis and the choice of the next situation are
 shared by all jobs. A job also needs a screen in `src/game/`, which either
-hands over pieces (bills, scoops) or sets a number (the planning board).
+hands over pieces (bills, scoops) or fills in a number on a form with a
+number pad.
 
 ## Layout
 

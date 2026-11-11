@@ -6,7 +6,7 @@ import { officeJob } from '../office/job.js';
 import { ORDER_MAX } from '../office/problems.js';
 import { customerSvg } from './art.js';
 import { h } from './dom.js';
-import { stepper } from './stepper.js';
+import { numberPad } from './number-pad.js';
 
 const IDA = { skin: '#f6d3b3', hair: '#b5432e', shirt: '#2f7f6b' };
 
@@ -181,9 +181,9 @@ export const officeView = {
   subject: 'Algebra',
   blurb: 'Make the town’s plans add up.',
   taskWord: 'Plan',
+  trayClass: 'paper',
   labels: {
-    tray: 'The order form',
-    clear: 'Start over',
+    tray: 'Town of Foothold: order form',
     submit: 'Sign it off',
     next: 'Next plan',
   },
@@ -210,7 +210,11 @@ export const officeView = {
   },
 
   control(round, api) {
-    return stepper(round, api, { max: ORDER_MAX, unit: round.extra.plan.unit });
+    return numberPad(round, api, {
+      max: ORDER_MAX,
+      before: round.problem.kind === 'earn' ? 'Target:' : 'Order',
+      unit: round.extra.plan.unit,
+    });
   },
 
   check(round) {

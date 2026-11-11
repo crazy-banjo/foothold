@@ -48,6 +48,11 @@ let round = null;
 let parts = {};
 let summary = null;
 
+/** A round is laid out in two columns when the screen is wide enough. */
+function setPlaying(playing) {
+  document.body.classList.toggle('playing', playing);
+}
+
 function setHeader(where) {
   whereEl.textContent = `Day ${learner.day} · ${where}`;
   purseEl.textContent = `${learner.coins} coins`;
@@ -75,6 +80,7 @@ const answerNow = () => (view.control ? round.amount : trayTotal());
 // ----------------------------------------------------------------- story
 
 function showIntro() {
+  setPlaying(false);
   const start = h(
     'button',
     {
@@ -109,6 +115,7 @@ function showIntro() {
 function showStreet() {
   view = null;
   round = null;
+  setPlaying(false);
   app.replaceChildren(
     h(
       'section',
@@ -167,6 +174,7 @@ function startDay(chosen) {
 }
 
 function startRound() {
+  setPlaying(true);
   const problem = nextProblem(learner, view.job, rng);
   round = {
     problem,
@@ -185,12 +193,15 @@ function startRound() {
   parts = {
     scene: h('section', { class: 'scene card' }),
     feedback: h('section', { class: 'feedback', role: 'status', 'aria-live': 'polite', tabindex: '-1' }),
-    tray: h('section', { class: 'tray card', 'aria-label': view.labels.tray }),
+    tray: h('section', { class: `tray card ${view.trayClass ?? ''}`, 'aria-label': view.labels.tray }),
     till: h('section', { class: 'till', 'aria-label': view.labels.pieces }),
     actions: h('div', { class: 'actions' }),
   };
   // The till sits above the tray so that it never moves as the tray fills.
-  app.replaceChildren(parts.scene, parts.feedback, parts.till, parts.tray, parts.actions);
+  app.replaceChildren(
+    h('div', { class: 'play-side' }, parts.scene, parts.feedback),
+    h('div', { class: 'play-side' }, parts.till, parts.tray, parts.actions),
+  );
   renderAll();
 }
 
@@ -234,18 +245,24 @@ function renderTray() {
 
 function renderActions() {
   const nothing = round.done || answerNow() <= 0;
-  parts.actions.replaceChildren(
-    h('button', { class: 'quiet', type: 'button', disabled: nothing, onclick: clearTray }, view.labels.clear),
+  const buttons = [
     h(
       'button',
       { class: 'primary', type: 'button', id: 'hand-over', disabled: nothing, onclick: handOver },
       view.labels.submit,
     ),
-  );
+  ];
+  // A job with its own way of clearing (the number pad) has no label here.
+  if (view.labels.clear) {
+    buttons.unshift(
+      h('button', { class: 'quiet', type: 'button', disabled: nothing, onclick: clearTray }, view.labels.clear),
+    );
+  }
+  parts.actions.replaceChildren(...buttons);
 }
 
 // A job either hands over pieces from a till (bills, scoops) or has its
-// own control for setting an amount (the depot's planning board).
+// own control for setting an amount (a form with a number pad).
 function renderInput() {
   parts.till.hidden = Boolean(view.control);
   if (view.control) {
@@ -426,6 +443,7 @@ function buy(upgrade) {
 }
 
 function renderDayEnd() {
+  setPlaying(false);
   const { job } = summary.view;
   const working = currentSkill(learner, job);
   const record = working && learner.jobs[job.id]?.skills[working.id];

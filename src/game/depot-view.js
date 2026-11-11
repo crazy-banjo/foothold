@@ -6,7 +6,7 @@ import { depotJob } from '../depot/job.js';
 import { PLAN_MAX, forEach } from '../depot/problems.js';
 import { customerSvg } from './art.js';
 import { h } from './dom.js';
-import { stepper } from './stepper.js';
+import { numberPad } from './number-pad.js';
 
 const SAM = { skin: '#9a6340', hair: '#2b1d16', shirt: '#3d6fb0' };
 
@@ -25,11 +25,13 @@ const boxes = (n) => `${n} ${n === 1 ? 'box' : 'boxes'}`;
 const minutes = (n) => `${n} ${n === 1 ? 'minute' : 'minutes'}`;
 const deliveries = (n) => `${n} ${n === 1 ? 'delivery' : 'deliveries'}`;
 
-/** What the player is setting in this situation. */
-function unitOf(problem) {
-  if (problem.ask === 'deliveries') return ['delivery', 'deliveries'];
-  if (problem.ask === 'chain' || problem.per === 'minutes') return ['minute', 'minutes'];
-  return ['box', 'boxes'];
+/** The line on the delivery form that the player fills in. */
+function formLine(problem) {
+  if (problem.ask === 'deliveries') return { before: 'Plan', unit: ['delivery', 'deliveries'] };
+  if (problem.ask === 'chain' || problem.per === 'minutes') {
+    return { before: 'Book the van for', unit: ['minute', 'minutes'] };
+  }
+  return { before: 'Load', unit: ['box', 'boxes'] };
 }
 
 function docketLines(p) {
@@ -215,9 +217,9 @@ export const depotView = {
   subject: 'Pre-algebra',
   blurb: 'Load the van and plan its day.',
   taskWord: 'Round',
+  trayClass: 'paper clipboard',
   labels: {
-    tray: 'The planning board',
-    clear: 'Start over',
+    tray: 'Delivery form',
     submit: 'Send the van',
     next: 'Next round',
   },
@@ -242,7 +244,7 @@ export const depotView = {
   },
 
   control(round, api) {
-    return stepper(round, api, { max: PLAN_MAX, unit: unitOf(round.problem) });
+    return numberPad(round, api, { max: PLAN_MAX, ...formLine(round.problem) });
   },
 
   check(round) {
