@@ -869,11 +869,39 @@ dialog h4 {
 dialog {
   width: min(560px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
-  padding: 20px;
+  padding: 0 20px 20px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--card);
   color: var(--ink);
+}
+
+/* The heading and its Close button stay in view while the panel scrolls. */
+.dialog-top {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 14px 20px 10px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.dialog-top h2 {
+  margin: 0;
+}
+
+.dialog-top .quiet {
+  min-height: 40px;
+  padding: 6px 14px;
+}
+
+.street > .quiet {
+  justify-self: start;
 }
 
 dialog::backdrop {

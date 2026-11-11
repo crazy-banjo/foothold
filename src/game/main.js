@@ -128,6 +128,11 @@ function showStreet() {
         h('div', {}, h('h2', {}, 'Main Street'), h('p', {}, 'Where will you work today?')),
       ),
       h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+      h(
+        'button',
+        { class: 'quiet', type: 'button', id: 'fix-up', onclick: showFixUp },
+        `Fix up the shop (you have ${learner.coins} coins)`,
+      ),
     ),
     ...VIEWS.map((v) => {
       const rank = rankOf(v);
@@ -433,13 +438,64 @@ function closeDay() {
   document.getElementById('to-street').focus();
 }
 
-function buy(upgrade) {
+function buy(upgrade, redraw) {
   if (learner.coins < upgrade.price || learner.shop.includes(upgrade.id)) return;
   learner.coins -= upgrade.price;
   learner.shop.push(upgrade.id);
   saveLearner(learner);
-  renderDayEnd();
+  redraw();
   (app.querySelector('.upgrades button:not(:disabled)') ?? document.getElementById('to-street')).focus();
+}
+
+/** The shop picture and what coins can buy for it. `redraw` repaints the screen after a purchase. */
+function fixUpCard(redraw) {
+  const forSale = UPGRADES.filter((u) => !learner.shop.includes(u.id));
+  return h(
+    'section',
+    { class: 'card fix-up' },
+    h('h2', {}, 'Fix up the shop'),
+    h('div', { html: shopSvg(learner.shop, UPGRADES) }),
+    h('p', { role: 'status' }, 'You have ', h('strong', {}, `${learner.coins} coins`), ' to spend.'),
+    forSale.length === 0
+      ? h('p', {}, 'The shop has everything now. It has never looked better.')
+      : h(
+          'ul',
+          { class: 'upgrades' },
+          forSale.map((upgrade) =>
+            h(
+              'li',
+              {},
+              h('span', { class: 'upgrade-name' }, upgrade.name),
+              h('span', { class: 'upgrade-price' }, `${upgrade.price} coins`),
+              h(
+                'button',
+                {
+                  class: 'quiet',
+                  type: 'button',
+                  disabled: learner.coins < upgrade.price,
+                  'aria-label': `Buy ${upgrade.name.toLowerCase()} for ${upgrade.price} coins`,
+                  onclick: () => buy(upgrade, redraw),
+                },
+                'Buy',
+              ),
+            ),
+          ),
+        ),
+  );
+}
+
+/** Spending coins, reached from Main Street at any time. */
+function showFixUp() {
+  setPlaying(false);
+  app.replaceChildren(
+    fixUpCard(showFixUp),
+    h(
+      'div',
+      { class: 'actions' },
+      h('button', { class: 'primary', type: 'button', id: 'to-street', onclick: showStreet }, 'Back to Main Street'),
+    ),
+  );
+  setHeader('Nell’s shop');
 }
 
 function renderDayEnd() {
@@ -447,7 +503,6 @@ function renderDayEnd() {
   const { job } = summary.view;
   const working = currentSkill(learner, job);
   const record = working && learner.jobs[job.id]?.skills[working.id];
-  const forSale = UPGRADES.filter((u) => !learner.shop.includes(u.id));
   app.replaceChildren(
     h(
       'section',
@@ -472,38 +527,7 @@ function renderDayEnd() {
           )
         : h('p', {}, 'You have learned every skill here.'),
     ),
-    h(
-      'section',
-      { class: 'card fix-up' },
-      h('h2', {}, 'Fix up the shop'),
-      h('div', { html: shopSvg(learner.shop, UPGRADES) }),
-      h('p', { role: 'status' }, 'You have ', h('strong', {}, `${learner.coins} coins`), ' to spend.'),
-      forSale.length === 0
-        ? h('p', {}, 'The shop has everything now. It has never looked better.')
-        : h(
-            'ul',
-            { class: 'upgrades' },
-            forSale.map((upgrade) =>
-              h(
-                'li',
-                {},
-                h('span', { class: 'upgrade-name' }, upgrade.name),
-                h('span', { class: 'upgrade-price' }, `${upgrade.price} coins`),
-                h(
-                  'button',
-                  {
-                    class: 'quiet',
-                    type: 'button',
-                    disabled: learner.coins < upgrade.price,
-                    'aria-label': `Buy ${upgrade.name.toLowerCase()} for ${upgrade.price} coins`,
-                    onclick: () => buy(upgrade),
-                  },
-                  'Buy',
-                ),
-              ),
-            ),
-          ),
-    ),
+    fixUpCard(renderDayEnd),
     h(
       'div',
       { class: 'actions' },
@@ -532,7 +556,12 @@ function patternStatus(record) {
 
 function openProgress() {
   progressDialog.replaceChildren(
-    h('h2', { id: 'progress-title', tabindex: '-1', autofocus: true }, 'Progress'),
+    h(
+      'div',
+      { class: 'dialog-top' },
+      h('h2', { id: 'progress-title', tabindex: '-1', autofocus: true }, 'Progress'),
+      h('button', { class: 'quiet', type: 'button', onclick: () => progressDialog.close() }, 'Close'),
+    ),
     ...VIEWS.flatMap((v) => {
       const seen = learner.jobs[v.job.id]?.patterns ?? {};
       const noticed = v.job.patterns.filter((p) => seen[p.id]?.seen > 0);
@@ -591,6 +620,10 @@ function resetProgress() {
 }
 
 document.getElementById('open-progress').addEventListener('click', openProgress);
+// A click on the dimmed area around the panel closes it.
+progressDialog.addEventListener('click', (event) => {
+  if (event.target === progressDialog) progressDialog.close();
+});
 
 // The title is the way home: back to Main Street from anywhere. Everything
 // earned so far is already saved; only the rest of today's jobs is dropped.
