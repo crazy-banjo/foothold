@@ -31,6 +31,9 @@ const FILES = [
   './src/kitchen/job.js',
   './src/kitchen/patterns.js',
   './src/kitchen/problems.js',
+  './src/office/job.js',
+  './src/office/patterns.js',
+  './src/office/problems.js',
 ];
 
 self.addEventListener('install', (event) => {
