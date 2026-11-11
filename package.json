@@ -1,0 +1,12 @@
+{
+  "name": "foothold",
+  "version": "0.1.0",
+  "description": "A free, offline math game that works out why an answer is wrong.",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}
