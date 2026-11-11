@@ -245,7 +245,7 @@ function renderActions() {
 }
 
 // A job either hands over pieces from a till (bills, scoops) or has its
-// own control for setting an amount (the fuel pump).
+// own control for setting an amount (the depot's planning board).
 function renderInput() {
   parts.till.hidden = Boolean(view.control);
   if (view.control) {

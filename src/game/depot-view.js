@@ -1,15 +1,16 @@
-// The delivery depot screen. Sam hands over a delivery; the player pumps
-// just enough fuel for the trip. Nothing ever asks "2 is to 30 as what is
-// to 90?".
+// The delivery depot screen. Sam hands over the day's round; the player
+// loads the boxes, books the minutes, or plans how many deliveries fit.
+// Nothing ever asks "4 is to 60 as 10 is to what?".
 
-import { PUMP_MAX, depotJob } from '../depot/job.js';
-import { tripGallons, tripMiles } from '../depot/problems.js';
+import { depotJob } from '../depot/job.js';
+import { PLAN_MAX, forEach } from '../depot/problems.js';
 import { customerSvg } from './art.js';
 import { h } from './dom.js';
+import { stepper } from './stepper.js';
 
 const SAM = { skin: '#9a6340', hair: '#2b1d16', shirt: '#3d6fb0' };
 
-const PLACES = [
+const ROUTES = [
   'Hillside Farm',
   'The Quarry',
   'Mill Road',
@@ -20,50 +21,182 @@ const PLACES = [
   'Pine Hollow',
 ];
 
-const TANK_HOLDS = 50;
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const boxes = (n) => `${n} ${n === 1 ? 'box' : 'boxes'}`;
+const minutes = (n) => `${n} ${n === 1 ? 'minute' : 'minutes'}`;
+const deliveries = (n) => `${n} ${n === 1 ? 'delivery' : 'deliveries'}`;
 
-/** The van's tank, filled to scale but with no marks on it. */
-function tankSvg(already, pumped) {
-  const width = 268;
-  const level = (gallons) => (Math.min(gallons, TANK_HOLDS) / TANK_HOLDS) * width;
-  return `<svg class="tank" viewBox="0 0 300 54" width="300" height="54" aria-hidden="true">
-    <defs><clipPath id="tank-inside"><rect x="6" y="8" width="${width}" height="38" rx="12"/></clipPath></defs>
-    <g clip-path="url(#tank-inside)">
-      <rect x="6" y="8" width="${width}" height="38" class="bowl-glass"/>
-      <rect x="6" y="8" width="${level(already + pumped)}" height="38" class="tank-pumped"/>
-      <rect x="6" y="8" width="${level(already)}" height="38" class="tank-already"/>
-    </g>
-    <rect x="6" y="8" width="${width}" height="38" rx="12" class="bowl-edge"/>
-    <rect x="${width + 6}" y="20" width="16" height="14" rx="3" class="tank-cap"/>
-  </svg>`;
+/** What the player is setting in this situation. */
+function unitOf(problem) {
+  if (problem.ask === 'deliveries') return ['delivery', 'deliveries'];
+  if (problem.ask === 'chain' || problem.per === 'minutes') return ['minute', 'minutes'];
+  return ['box', 'boxes'];
 }
 
-function docketLines(problem) {
-  const { gallons, miles, distance, roundTrip, tank } = problem;
+function docketLines(p) {
+  if (p.ask === 'chain') {
+    return [
+      `Each delivery gets ${boxes(p.boxesEach)} and takes ${minutes(p.minutesEach)}.`,
+      `There are ${boxes(p.boxes)} to deliver.`,
+      'Book the van for the whole job.',
+    ];
+  }
+  const isBoxes = p.per === 'boxes';
+  const { known, start } = p;
+  const first =
+    known.deliveries === 1
+      ? isBoxes
+        ? `Each delivery gets ${boxes(known.amount)}.`
+        : `Each delivery takes ${minutes(known.amount)}.`
+      : isBoxes
+        ? `Yesterday, ${deliveries(known.deliveries)} used ${boxes(known.amount)}.`
+        : `Yesterday, ${deliveries(known.deliveries)} took ${minutes(known.amount)}.`;
+  const loading = `Loading the van takes ${minutes(start)} first.`;
+
+  if (p.ask === 'amount') {
+    return [
+      first,
+      `Today there are ${deliveries(p.today)}.`,
+      start > 0 && (isBoxes ? `${boxes(start)} ${start === 1 ? 'is' : 'are'} already on the van.` : loading),
+      isBoxes
+        ? start > 0
+          ? 'Load the boxes the van still needs.'
+          : 'Load the van.'
+        : start > 0
+          ? 'Book the van for the whole job.'
+          : 'Book the van for the deliveries.',
+    ].filter(Boolean);
+  }
   return [
-    roundTrip
-      ? `It is ${distance} miles away. The van must get there and back.`
-      : `It is ${distance} miles away.`,
-    `This van goes ${miles} miles on ${plural(gallons, 'gallon')}.`,
-    tank > 0 ? `The tank already has ${plural(tank, 'gallon')} in it.` : 'The tank is empty.',
+    first,
+    isBoxes ? `There are ${boxes(p.have)} in the yard.` : `The van is free for ${minutes(p.have)}.`,
+    start > 0 && loading,
+    isBoxes ? 'Plan as many full deliveries as the boxes allow.' : 'Plan as many deliveries as fit.',
+  ].filter(Boolean);
+}
+
+/** What the answer would mean on the road. Every line here is simply true. */
+function consequence(p, answer) {
+  const over = (n, what) => (n > 0 ? `, with ${what(n)} over` : '');
+
+  if (p.ask === 'chain') {
+    const fit = Math.floor(answer / p.minutesEach);
+    return [
+      `You booked ${minutes(answer)}.`,
+      `That is time for ${deliveries(fit)}${over(answer % p.minutesEach, minutes)}.`,
+      `Those carry ${boxes(fit * p.boxesEach)}. There are ${boxes(p.boxes)} to deliver.`,
+    ];
+  }
+
+  const rate = forEach(p);
+  const { start } = p;
+
+  if (p.ask === 'amount' && p.per === 'boxes') {
+    const onVan = answer + start;
+    const needed = rate * p.today;
+    return [
+      start > 0
+        ? `You loaded ${boxes(answer)}. With the ${start} already on the van, that makes ${onVan}.`
+        : `You loaded ${boxes(answer)}.`,
+      `That is enough for ${deliveries(Math.floor(onVan / rate))}${over(onVan % rate, boxes)}.`,
+      `Today there are ${deliveries(p.today)}. ${onVan < needed ? 'Some would go without.' : 'That is more than they need.'}`,
+    ];
+  }
+
+  if (p.ask === 'amount') {
+    const left = answer - start;
+    const enough = answer >= rate * p.today + start;
+    return [
+      start > 0 && left >= 0
+        ? `You booked ${minutes(answer)}. After ${minutes(start)} of loading, ${left} ${left === 1 ? 'is' : 'are'} left.`
+        : `You booked ${minutes(answer)}.`,
+      left < 0
+        ? `Loading the van alone takes ${minutes(start)}.`
+        : `That is time for ${deliveries(Math.floor(left / rate))}${over(left % rate, minutes)}.`,
+      `Today there are ${deliveries(p.today)}. ${enough ? 'The van would be booked for longer than it needs.' : 'The van would not finish.'}`,
+    ];
+  }
+
+  const needed = answer * rate + start;
+  if (p.per === 'boxes') {
+    return [
+      `You planned ${deliveries(answer)}.`,
+      `They need ${boxes(needed)}.`,
+      needed > p.have
+        ? `There are ${boxes(p.have)} in the yard. That is ${boxes(needed - p.have)} short.`
+        : `There are ${boxes(p.have)} in the yard. That leaves ${p.have - needed}, enough for another delivery.`,
+    ];
+  }
+  return [
+    `You planned ${deliveries(answer)}.`,
+    start > 0
+      ? `They take ${minutes(answer * rate)}, plus ${start} of loading. That is ${minutes(needed)}.`
+      : `They take ${minutes(needed)}.`,
+    needed > p.have
+      ? `The van is free for ${minutes(p.have)}. That is ${minutes(needed - p.have)} too long.`
+      : `The van is free for ${minutes(p.have)}. That leaves ${p.have - needed}, enough for another delivery.`,
   ];
 }
 
-/** The columns of the trip table, as [gallons, miles] pairs. */
-function tableColumns(problem, tries) {
-  const { gallons, miles } = problem;
-  const total = tripMiles(problem);
-  const rate = miles / gallons;
-  const columns = [[gallons, miles]];
-  if (tries >= 2) {
-    // One more known pair to reason from: the miles for 1 gallon, or for 2
-    // gallons when the plate already gives 1.
-    const extra = gallons > 1 ? 1 : 2;
-    if (extra * rate !== total) columns.push([extra, extra * rate]);
+/** Sam's table: the rows, as [heading, ...cells], and a note under it. */
+function table(p, tries) {
+  if (p.ask === 'chain') {
+    const made = tries >= 2 ? p.boxes / p.boxesEach : '?';
+    return {
+      rows: [
+        ['Deliveries', 1, made],
+        ['Boxes', p.boxesEach, p.boxes],
+        ['Minutes', p.minutesEach, '?'],
+      ],
+      note: null,
+    };
   }
-  columns.push(['?', total]);
-  return columns;
+  const rate = forEach(p);
+  const { known, start } = p;
+  const columns = [[known.deliveries, known.amount]];
+  let note = null;
+
+  if (p.ask === 'amount') {
+    // One more known pair to reason from on a second miss: the amount for
+    // 1 delivery, or for 2 when the amount for 1 is already given.
+    const extra = known.deliveries > 1 ? 1 : 2;
+    if (tries >= 2 && extra !== p.today) columns.push([extra, extra * rate]);
+    columns.push([p.today, '?']);
+    if (start > 0) {
+      note = p.per === 'boxes' ? `${boxes(start)} of these ${start === 1 ? 'is' : 'are'} already on the van.` : `Loading adds ${minutes(start)}.`;
+    }
+  } else {
+    if (tries >= 2) columns.push([2, 2 * rate]);
+    if (start > 0 && tries >= 2) {
+      columns.push(['?', p.have - start]);
+      note = `After loading, ${minutes(p.have - start)} are left for deliveries.`;
+    } else {
+      columns.push(['?', p.have]);
+      if (start > 0) note = `Loading takes ${minutes(start)} of this first.`;
+    }
+  }
+  return {
+    rows: [
+      ['Deliveries', ...columns.map((c) => c[0])],
+      [p.per === 'boxes' ? 'Boxes' : 'Minutes', ...columns.map((c) => c[1])],
+    ],
+    note,
+  };
+}
+
+function answerLine(p, right) {
+  if (p.ask === 'chain') {
+    return `${deliveries(p.boxes / p.boxesEach)}, at ${minutes(p.minutesEach)} each, take ${minutes(right)}.`;
+  }
+  const rate = forEach(p);
+  if (p.ask === 'deliveries') return `${deliveries(right)} ${right === 1 ? 'fits' : 'fit'}.`;
+  if (p.per === 'boxes') {
+    return p.start > 0
+      ? `The deliveries need ${boxes(rate * p.today)}. ${p.start} ${p.start === 1 ? 'is' : 'are'} on the van, so load ${right}.`
+      : `The deliveries need ${boxes(right)}.`;
+  }
+  return p.start > 0
+    ? `The deliveries take ${minutes(rate * p.today)}. With ${p.start} of loading, book ${right}.`
+    : `The deliveries take ${minutes(right)}.`;
 }
 
 export const depotView = {
@@ -73,143 +206,77 @@ export const depotView = {
   // only by learning; they cannot be bought and are never lost.
   ranks: [
     { at: 0, title: 'Yard Hand' },
-    { at: 1, title: 'Fuel Hand' },
-    { at: 2, title: 'Driver’s Mate' },
-    { at: 4, title: 'Dispatcher' },
-    { at: 5, title: 'Depot Manager' },
+    { at: 1, title: 'Loader' },
+    { at: 3, title: 'Driver’s Mate' },
+    { at: 5, title: 'Dispatcher' },
+    { at: 6, title: 'Depot Manager' },
   ],
   title: 'The delivery depot',
   subject: 'Pre-algebra',
-  blurb: 'Pump just enough fuel for each trip.',
-  taskWord: 'Delivery',
+  blurb: 'Load the van and plan its day.',
+  taskWord: 'Round',
   labels: {
-    tray: 'The fuel pump',
+    tray: 'The planning board',
     clear: 'Start over',
     submit: 'Send the van',
-    next: 'Next delivery',
+    next: 'Next round',
   },
-  allLearnedLine: 'You plan fuel like an old hand. The town office has been asking about you.',
+  allLearnedLine: 'You run the yard like an old hand. The town office has been asking about you.',
 
   setUp(problem, rng) {
-    return { place: rng.pick(PLACES) };
+    return { route: rng.pick(ROUTES) };
   },
 
   scene(round) {
     const mood = round.done ? 'happy' : round.wrong.length > 0 ? 'puzzled' : 'neutral';
-    const says = round.done
-      ? 'Off it goes!'
-      : round.wrong.length > 0
-        ? 'Hold on. Let’s look.'
-        : 'Pump just enough fuel.';
+    const says = round.done ? 'Off it goes!' : round.wrong.length > 0 ? 'Hold on. Let’s look.' : 'Here is the next round.';
     return [
       h('div', { class: 'customer' }, h('div', { html: customerSvg(SAM, mood) }), h('p', { class: 'bubble' }, says)),
       h(
         'div',
         { class: 'recipe' },
-        h('h2', { class: 'recipe-name' }, `Delivery: ${round.extra.place}`),
+        h('h2', { class: 'recipe-name' }, `Route: ${round.extra.route}`),
         docketLines(round.problem).map((line) => h('p', {}, line)),
       ),
     ];
   },
 
-  /**
-   * The pump: a display and four buttons. It keeps its own buttons on the
-   * page while the amount changes, and tells the game the new amount.
-   */
   control(round, api) {
-    let amount = api.amount;
-    const display = h('output', { class: 'pump-display' });
-    const tank = h('div', { class: 'tank-holder' });
-    const draw = () => {
-      display.textContent = plural(amount, 'gallon');
-      tank.innerHTML = tankSvg(round.problem.tank, amount);
-    };
-    const step = (by, label) =>
-      h(
-        'button',
-        {
-          class: 'quiet pump-step',
-          type: 'button',
-          disabled: round.done,
-          'aria-label': label,
-          onclick: () => {
-            amount = Math.max(0, Math.min(PUMP_MAX, amount + by));
-            draw();
-            api.set(amount);
-          },
-        },
-        by > 0 ? `+${by}` : `−${-by}`,
-      );
-    draw();
-    return h(
-      'div',
-      { class: 'pump' },
-      tank,
-      h(
-        'div',
-        { class: 'pump-row' },
-        step(-10, 'Take 10 gallons off'),
-        step(-1, 'Take 1 gallon off'),
-        display,
-        step(1, 'Pump 1 more gallon'),
-        step(10, 'Pump 10 more gallons'),
-      ),
-    );
+    return stepper(round, api, { max: PLAN_MAX, unit: unitOf(round.problem) });
   },
 
   check(round) {
     const { problem, result, hint } = round;
     const tries = round.wrong.length;
-    const rate = problem.miles / problem.gallons;
-    const inTank = result.answer + problem.tank;
-    const reach = inTank * rate;
-    const total = tripMiles(problem);
+    const [first, second, third] = consequence(problem, result.answer);
+    const { rows, note: tableNote } = table(problem, tries);
     let note = hint;
-    if (!note && result.slip) note = 'You are very close. It is off by just one gallon.';
-    const columns = tableColumns(problem, tries);
-    const needed = tripGallons(problem);
+    if (!note && result.slip) note = 'You are very close. It is off by just one.';
     return [
-      h(
-        'p',
-        {},
-        problem.tank > 0
-          ? `You pumped ${plural(result.answer, 'gallon')}. With the ${problem.tank} already there, the tank has ${plural(inTank, 'gallon')}.`
-          : `You pumped ${plural(result.answer, 'gallon')}.`,
-      ),
-      h('p', { class: 'equation' }, `That takes the van ${reach} miles.`),
-      h(
-        'p',
-        {},
-        reach < total
-          ? `The trip is ${total} miles${problem.roundTrip ? ', there and back' : ''}. The van would stop ${total - reach} miles short.`
-          : `The trip is only ${total} miles${problem.roundTrip ? ', there and back' : ''}. That is more fuel than it needs.`,
-      ),
+      h('p', {}, first),
+      h('p', { class: 'equation' }, second),
+      h('p', {}, third),
       note && h('p', { class: 'note' }, note),
       h(
         'figure',
         {},
-        h('figcaption', {}, 'The van’s trip table:'),
+        h('figcaption', {}, 'Sam’s table:'),
         h(
           'table',
           { class: 'trip-table' },
-          h('tr', {}, h('th', { scope: 'row' }, 'Gallons'), columns.map(([gallons]) => h('td', {}, String(gallons)))),
-          h('tr', {}, h('th', { scope: 'row' }, 'Miles'), columns.map(([, miles]) => h('td', {}, String(miles)))),
+          rows.map(([heading, ...cells]) =>
+            h('tr', {}, h('th', { scope: 'row' }, heading), cells.map((cell) => h('td', {}, String(cell)))),
+          ),
         ),
+        tableNote && h('p', { class: 'mark-note' }, tableNote),
       ),
-      tries >= 3 &&
-        h(
-          'p',
-          { class: 'answer' },
-          problem.tank > 0
-            ? `The trip needs ${plural(needed, 'gallon')}. The tank has ${problem.tank}, so pump ${result.expected}.`
-            : `The trip needs ${plural(needed, 'gallon')}.`,
-        ),
+      tries >= 3 && h('p', { class: 'answer' }, answerLine(problem, result.expected)),
     ];
   },
 
   dayLine(day, tasks) {
-    if (day.firstTry === tasks) return 'Every van got there and back with nothing wasted.';
-    if (day.firstTry >= tasks - 2) return 'A good day. We checked the tricky trips together.';
-    return 'Some hard trips today. Checking them is how you get better.';
+    if (day.firstTry === tasks) return 'Every van went out right the first time.';
+    if (day.firstTry >= tasks - 2) return 'A good day. We checked the tricky rounds together.';
+    return 'Some hard rounds today. Checking them is how you get better.';
   },
 };

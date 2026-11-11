@@ -681,24 +681,6 @@ figcaption {
   justify-items: center;
 }
 
-.tank {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-.tank-pumped {
-  fill: #e9b949;
-}
-
-.tank-already {
-  fill: #b98a2c;
-}
-
-.tank-cap {
-  fill: var(--soft);
-}
-
 .pump-row {
   display: flex;
   flex-wrap: wrap;
