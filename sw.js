@@ -2,7 +2,7 @@
 // (so updates arrive straight away) and kept in a cache, which is used
 // whenever the network is not available.
 
-const CACHE = 'foothold-v2';
+const CACHE = 'foothold-v3';
 
 const FILES = [
   './',
@@ -50,8 +50,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  // "no-cache" makes the browser check with the server instead of reusing
+  // its own stored copy, so a new version shows up on the next visit.
   event.respondWith(
-    fetch(request)
+    fetch(request.url, { cache: 'no-cache' })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
