@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Foothold</title>
+    <meta name="description" content="Run the shop counter and hand back the right change. A free, offline math game." />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='22' fill='%23d9905a' stroke='%2393522a' stroke-width='3'/%3E%3Ctext x='24' y='32' text-anchor='middle' font-size='24' font-weight='700' font-family='sans-serif' fill='%232b2622'%3EF%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <h1 class="brand">Foothold</h1>
+      <p class="where" id="where"></p>
+      <p class="purse" id="purse"></p>
+      <button class="quiet" id="open-progress" type="button">Progress</button>
+    </header>
+
+    <main id="app">
+      <noscript>Foothold needs JavaScript to run.</noscript>
+    </main>
+
+    <dialog id="progress" aria-labelledby="progress-title"></dialog>
+
+    <script type="module" src="src/game/main.js"></script>
+  </body>
+</html>
