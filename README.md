@@ -23,6 +23,7 @@ Two things reward the work, and they are kept apart on purpose:
 | Nell's shop counter | Money, subtraction | Hand customers their change from the till, up to change from $100.00 |
 | Nell's kitchen | Fractions | Measure ingredients with whichever scoops are clean |
 | The delivery depot | Ratio and rate (pre-algebra) | Load boxes, book minutes, and plan how many deliveries fit |
+| The town office | Linear equations (algebra) | Fill in the one number that makes a plan add up |
 
 ![The shop counter after a wrong answer: the game checks the change by adding it back to the price, explains the likely mistake, and shows a number line to count up on.](docs/screenshot.png)
 
@@ -30,12 +31,15 @@ Two things reward the work, and they are kept apart on purpose:
 
 ![The depot after a wrong answer: the game says how many deliveries the booked time allows, and shows a table of deliveries against minutes.](docs/depot.png)
 
+![The town office after a wrong answer: the game adds up what the order would cost, and shows how the budget is split between the charge and the rest.](docs/office.png)
+
 When an answer is wrong, Foothold does three things:
 
 1. **Checks it in the terms of the job.** At the counter it adds the change
    back to the price. In the kitchen it draws what is needed and what is in
    the bowl as bars, to scale. At the depot it says how many deliveries
-   that load or that time would cover.
+   that load or that time would cover. At the town office it adds up what
+   the plan would cost.
 2. **Looks for the reason.** It compares what was handed over with what a
    set of known mistake patterns would produce. Handing back $3.60 for a
    $2.40 item paid with $5.00 is the result of breaking a dollar into dimes
@@ -51,7 +55,7 @@ in the browser it is played in.
 
 ## Status
 
-Early. Three jobs exist, with six to eight skills each. Money is US currency
+Early. Four jobs exist, with four to eight skills each. Money is US currency
 and measures are US cups. It has not yet been tried with children, so the
 difficulty curve and the wording of the hints are untested guesses.
 
@@ -121,6 +125,21 @@ At the depot, where deliveries, boxes and minutes are linked:
 | Stops at the number of deliveries | enters 8 deliveries as the minutes |
 | Multiplies the two amounts for one delivery | 6 boxes × 15 minutes = 90 |
 
+At the town office ($6 charge plus $2 each from a $26 budget; the answer
+is 10, from 6 + 2n = 26):
+
+| Pattern | Orders |
+|---|---|
+| Leaves out the charge | 13 (26 ÷ 2) |
+| Stops after taking off the charge | 20 (26 − 6) |
+| Divides before taking off the charge | 7 (26 ÷ 2 − 6) |
+| Adds the charge to the budget | 16 ((26 + 6) ÷ 2) |
+| Joins the charge and the price | 26 ÷ 8, when that is a whole number |
+| Rounds up past the budget | one more than the budget pays for |
+| Takes the cost off the target | when raising money: subtracts the cost instead of adding it |
+| Leaves out the cost | when raising money: target ÷ price |
+| Stops at the money needed | when raising money: target + cost |
+
 The counter's column patterns follow the subtraction "bugs" catalogued by
 Brown and Burton (1978) and VanLehn (1990). Most of the kitchen's patterns
 come from treating the top and bottom of a fraction as two separate whole
@@ -162,7 +181,7 @@ src/engine/              shared by every job: no browser code
 src/counter/             the shop counter: money, situations, patterns
 src/kitchen/             the kitchen: fractions, situations, patterns
 src/depot/               the delivery depot: situations, patterns
-src/office/              the town office (engine only so far)
+src/office/              the town office: plans, situations, patterns
 src/game/                the screens: Main Street, each job, the story
 test/                    tests for the engine and every job
 ```
@@ -179,7 +198,8 @@ Needs Node.js 20 or later. Nothing to install.
 
 More buildings on Main Street, each with its own way of playing:
 
-- **Town office** (algebra): prices, break-even
+- **Town office, further on** (algebra): two offers that cost the same at
+  some point, which puts the unknown on both sides
 - **Workshop** (geometry): measure, cut, fit
 
 ## Contributing

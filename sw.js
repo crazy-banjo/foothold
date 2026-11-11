@@ -2,7 +2,7 @@
 // (so updates arrive straight away) and kept in a cache, which is used
 // whenever the network is not available.
 
-const CACHE = 'foothold-v7';
+const CACHE = 'foothold-v8';
 
 const FILES = [
   './',
@@ -26,6 +26,7 @@ const FILES = [
   './src/game/goods.js',
   './src/game/kitchen-view.js',
   './src/game/main.js',
+  './src/game/office-view.js',
   './src/game/stepper.js',
   './src/game/storage.js',
   './src/kitchen/fractions.js',

@@ -19,11 +19,11 @@ import { depotView } from './depot-view.js';
 import { h, rich } from './dom.js';
 import { UPGRADES } from './goods.js';
 import { kitchenView } from './kitchen-view.js';
+import { officeView } from './office-view.js';
 import { clearLearner, freshSave, loadLearner, saveLearner } from './storage.js';
 
-const VIEWS = [counterView, kitchenView, depotView];
+const VIEWS = [counterView, kitchenView, depotView, officeView];
 const COMING_LATER = [
-  { title: 'Town office', subject: 'Algebra' },
   { title: 'Workshop', subject: 'Geometry' },
 ];
 
@@ -95,7 +95,7 @@ function showIntro() {
       h('h2', {}, 'Welcome to Foothold'),
       h('div', { html: shopSvg(learner.shop, UPGRADES) }),
       h('p', {}, 'Foothold is a small town at the foot of the hills. Its main street has seen better days.'),
-      h('p', {}, 'Nell needs help in her corner shop and its kitchen. Sam needs help at the delivery depot.'),
+      h('p', {}, 'Nell needs help in her shop and its kitchen. Sam needs help at the delivery depot, and Ida at the town office.'),
       h('p', {}, 'Every job here is real work. Do it well and you earn coins.'),
       h('p', {}, 'Spend your coins to fix up the street, starting with Nell’s shop.'),
       start,

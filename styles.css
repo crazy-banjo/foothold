@@ -741,6 +741,42 @@ figcaption {
   font-weight: 700;
 }
 
+/* ------------------------------------------------------------- office */
+
+.strips {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+}
+
+.strip {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.strip-whole {
+  fill: var(--accent);
+}
+
+.strip-charge {
+  fill: #b98a2c;
+}
+
+.strip-ask {
+  fill: #e9b949;
+}
+
+.strip-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: #1c1a17;
+}
+
+.strip-whole + .strip-label {
+  fill: var(--accent-ink);
+}
+
 /* ----------------------------------------------------------- progress */
 
 dialog h4 {
