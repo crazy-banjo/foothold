@@ -182,6 +182,7 @@ export const kitchenView = {
   labels: {
     tray: 'In the bowl',
     empty: 'Pick a scoop to add to the bowl.',
+    undo: 'Tap a scoop here to take it back out.',
     given: 'Measured.',
     pieces: 'Clean scoops',
     clear: 'Start over',

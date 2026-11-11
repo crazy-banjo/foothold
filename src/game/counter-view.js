@@ -19,6 +19,7 @@ export const counterView = {
   labels: {
     tray: 'Change you are handing back',
     empty: 'Pick bills and coins from your till.',
+    undo: 'Tap a bill or coin here to take it back.',
     given: 'Handed over.',
     pieces: 'Your till',
     clear: 'Start over',

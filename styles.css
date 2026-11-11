@@ -318,8 +318,13 @@ figcaption {
   align-content: start;
 }
 
+.tray-pieces {
+  min-height: 58px;
+}
+
 .empty {
   color: var(--soft);
+  font-size: 0.9rem;
 }
 
 .sum {

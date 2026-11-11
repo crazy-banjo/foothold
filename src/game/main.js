@@ -153,7 +153,8 @@ function startRound() {
     till: h('section', { class: 'till', 'aria-label': view.labels.pieces }),
     actions: h('div', { class: 'actions' }),
   };
-  app.replaceChildren(parts.scene, parts.feedback, parts.tray, parts.till, parts.actions);
+  // The till sits above the tray so that it never moves as the tray fills.
+  app.replaceChildren(parts.scene, parts.feedback, parts.till, parts.tray, parts.actions);
   renderAll();
 }
 
@@ -171,22 +172,27 @@ function renderTray() {
   parts.tray.replaceChildren(
     h('h2', { class: 'label' }, view.labels.tray),
     view.trayExtra(round, trayTotal()),
-    pieces.length === 0
-      ? h('p', { class: 'empty' }, round.done ? view.labels.given : view.labels.empty)
-      : h(
-          'div',
-          { class: 'pieces' },
-          pieces.map((piece) =>
-            h('button', {
-              class: 'piece',
-              type: 'button',
-              disabled: round.done,
-              'aria-label': `Take back a ${piece.name}`,
-              html: view.pieceSvg(piece),
-              onclick: () => removePiece(piece),
-            }),
-          ),
-        ),
+    // This area keeps its height when empty, so nothing jumps when the
+    // first piece goes in.
+    h(
+      'div',
+      { class: 'pieces tray-pieces' },
+      pieces.map((piece) =>
+        h('button', {
+          class: 'piece',
+          type: 'button',
+          disabled: round.done,
+          'aria-label': `Take back a ${piece.name}`,
+          html: view.pieceSvg(piece),
+          onclick: () => removePiece(piece),
+        }),
+      ),
+    ),
+    h(
+      'p',
+      { class: 'empty' },
+      round.done ? view.labels.given : pieces.length === 0 ? view.labels.empty : view.labels.undo,
+    ),
   );
   parts.actions.replaceChildren(
     h(
